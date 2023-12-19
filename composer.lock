@@ -1,0 +1,106 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "2e09a20c8e082ae087bf5dfef474a404",
+    "packages": [
+        {
+            "name": "mongdch/mon-util",
+            "version": "1.4.10",
+            "dist": {
+                "type": "zip",
+                "url": "https://mirrors.tencent.com/repository/composer/mongdch/mon-util/1.4.10/mongdch-mon-util-1.4.10.zip",
+                "reference": "fb4fad01e79b501b58ecacd13b76e7f8c2589a65",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6.0",
+                "psr/container": "1.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "mon\\util\\": "src/"
+                }
+            },
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Mon",
+                    "email": "985558837@qq.com",
+                    "homepage": "http://www.gdmon.com/",
+                    "role": "Developer"
+                }
+            ],
+            "description": "常用的PHP工具类库，包含了各种各式各样的工具，如：容器、时间、验证器、多语言、图片处理、二维码生成、IP地址解析、文件操作、数据安全、数据字典等等等等。。。",
+            "homepage": "http://gdmon.com/",
+            "keywords": [
+                "mon",
+                "tool",
+                "util"
+            ],
+            "time": "2023-12-13T09:20:28+00:00"
+        },
+        {
+            "name": "psr/container",
+            "version": "1.0.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://mirrors.cloud.tencent.com/repository/composer/psr/container/1.0.0/psr-container-1.0.0.zip",
+                "reference": "b7ce3b176482dbbc1245ebf52b181af44c2cf55f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Container\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "http://www.php-fig.org/"
+                }
+            ],
+            "description": "Common Container Interface (PHP FIG PSR-11)",
+            "homepage": "https://github.com/php-fig/container",
+            "keywords": [
+                "PSR-11",
+                "container",
+                "container-interface",
+                "container-interop",
+                "psr"
+            ],
+            "time": "2017-02-14T16:28:37+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.2"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "2.2.0"
+}
