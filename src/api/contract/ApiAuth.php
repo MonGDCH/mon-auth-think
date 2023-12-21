@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace mon\auth\api;
-
-use mon\auth\api\dao\DaoInterface;
-use mon\auth\api\driver\DriverInterface;
+namespace mon\auth\api\contract;
 
 /**
  * API权限接口
@@ -13,15 +10,15 @@ use mon\auth\api\driver\DriverInterface;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-interface ApiAuthInterface
+interface ApiAuth
 {
     /**
      * 初始化
      *
      * @param array $config 配置信息
-     * @return ApiAuthInterface
+     * @return ApiAuth
      */
-    public function init(array $config = []): ApiAuthInterface;
+    public function init(array $config = []): ApiAuth;
 
     /**
      * 是否初始化
@@ -40,14 +37,14 @@ interface ApiAuthInterface
     /**
      * 获取驱动实例
      *
-     * @return DriverInterface
+     * @return Driver
      */
-    public function getDriver(): DriverInterface;
+    public function getDriver(): Driver;
 
     /**
      * 获取Dao实例
      *
-     * @return DaoInterface
+     * @return Dao
      */
-    public function getDao(): DaoInterface;
+    public function getDao(): Dao;
 }

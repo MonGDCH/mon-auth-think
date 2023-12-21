@@ -1,6 +1,6 @@
 <?php
 
-namespace mon\auth\api\dao;
+namespace mon\auth\api\contract;
 
 /**
  * Dao业务接口
@@ -8,7 +8,7 @@ namespace mon\auth\api\dao;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-interface DaoInterface
+interface Dao
 {
     /**
      * 获取所有数据

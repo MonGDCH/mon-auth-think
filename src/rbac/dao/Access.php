@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace mon\auth\rbac\model;
+namespace mon\auth\rbac\dao;
 
-use mon\util\Instance;
+use mon\thinkOrm\Dao;
 use mon\auth\rbac\Auth;
+use mon\auth\rbac\Validate;
+use mon\auth\exception\RbacException;
 
 /**
  * 组别用户关联模型
@@ -13,16 +15,28 @@ use mon\auth\rbac\Auth;
  * @author Mon <985558837@qq.com>
  * @version 1.0.1   优化代码
  */
-class Access extends Base
+class Access extends Dao
 {
-    use Instance;
+    /**
+     * Auth实例
+     *
+     * @var Auth
+     */
+    protected $auth;
 
     /**
-     * 表名
+     * 验证器
      *
-     * @var string
+     * @var Validate
      */
-    protected $table;
+    protected $validate = Validate::class;
+
+    /**
+     * 自动写入时间戳
+     *
+     * @var boolean
+     */
+    protected $autoWriteTimestamp = true;
 
     /**
      * 构造方法
@@ -31,7 +45,10 @@ class Access extends Base
      */
     public function __construct(Auth $auth)
     {
-        parent::__construct($auth);
+        if (!$auth->isInit()) {
+            throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
+        }
+        $this->auth = $auth;
         $this->table = $this->auth->getConfig('auth_group_access');
     }
 
@@ -43,9 +60,9 @@ class Access extends Base
      */
     public function getUserGroup($uid): array
     {
-        return $this->table($this->table . ' a')->join($this->auth->getConfig('auth_group') . ' b', 'a.group_id=b.id')
-            ->field('a.uid, a.group_id, b.id, b.pid, b.title, b.rules')
-            ->where('a.uid', $uid)->where('b.status', $this->auth->getConfig('effective_status'))->select();
+        return $this->alias('a')->join($this->auth->getConfig('auth_group') . ' b', 'a.group_id=b.id')
+            ->field(['a.uid', 'a.group_id', 'b.id', 'b.pid', 'b.title', 'b.rules'])
+            ->where('a.uid', $uid)->where('b.status', $this->auth->getConfig('effective_status'))->all();
     }
 
     /**
@@ -62,12 +79,12 @@ class Access extends Base
             return false;
         }
 
-        if ($this->where('group_id', $option['gid'])->where('uid', $option['uid'])->find()) {
+        if ($this->where('group_id', $option['gid'])->where('uid', $option['uid'])->get()) {
             $this->error = '用户已关联，请勿重复关联';
             return false;
         }
 
-        $save = $this->save(['uid' => $option['uid'], 'group_id' => $option['gid']]);
+        $save = $this->save(['uid' => $option['uid'], 'group_id' => $option['gid']], true);
         if (!$save) {
             $this->error = '关联用户组别失败';
             return false;
@@ -91,7 +108,7 @@ class Access extends Base
             return false;
         }
 
-        $info = $this->where('group_id', $option['gid'])->where('uid', $option['uid'])->find();
+        $info = $this->where('group_id', $option['gid'])->where('uid', $option['uid'])->get();
         if (!$info) {
             $this->error = '用户未绑定组别';
             return false;
@@ -124,18 +141,18 @@ class Access extends Base
             return false;
         }
 
-        $info = $this->where('uid', $option['uid'])->where('group_id', $option['gid'])->find();
+        $info = $this->where('uid', $option['uid'])->where('group_id', $option['gid'])->get();
         if (!$info) {
             $this->error = '用户未分配对应旧关联组';
             return false;
         }
-        $exists = $this->where('uid', $option['uid'])->where('group_id', $option['new_gid'])->find();
+        $exists = $this->where('uid', $option['uid'])->where('group_id', $option['new_gid'])->get();
         if ($exists) {
             $this->error = '用户已绑定新组别，请勿重复绑定';
             return false;
         }
 
-        $save = $this->save(['group_id' => $option['new_gid']], ['uid' => $option['uid'], 'group_id' => $option['gid']]);
+        $save = $this->where(['uid' => $option['uid'], 'group_id' => $option['gid']])->save(['group_id' => $option['new_gid']]);
         if (!$save) {
             $this->error = '更新失败';
             return false;

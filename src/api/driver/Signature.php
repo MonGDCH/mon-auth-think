@@ -7,6 +7,7 @@ namespace mon\auth\api\driver;
 use mon\util\Event;
 use mon\util\Common;
 use mon\util\Instance;
+use mon\auth\api\contract\Driver;
 use mon\auth\exception\APIException;
 
 /**
@@ -15,7 +16,7 @@ use mon\auth\exception\APIException;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class Signature implements DriverInterface
+class Signature implements Driver
 {
     use Instance;
 

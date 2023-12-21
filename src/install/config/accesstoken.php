@@ -24,21 +24,19 @@ return [
             'data'  => [
                 [
                     // 应用ID
-                    'app_id'    => 'TEST123456789',
+                    'app_id'        => 'TEST123456789',
                     // 应用秘钥
-                    'secret'    => 'klasjhghaalskfjqwpetoijhxc',
+                    'secret'        => 'klasjhghaalskfjqwpetoijhxc',
                     // 应用名称
-                    'name'      => '测试',
+                    'name'          => '测试',
                     // 应用状态，1有效 0无效
-                    'status'    => 1,
+                    'status'        => 1,
                     // 应用过期时间戳
                     'expired_time'  => 0,
                 ]
             ],
             // 数据库驱动操作表，driver驱动为 DatabaseDao 时有效
             'table'     => 'api_sign',
-            // 数据库链接配置，driver驱动为 DatabaseDao 时有效
-            'config'    => 'default'
         ]
     ],
     // 中间件配置

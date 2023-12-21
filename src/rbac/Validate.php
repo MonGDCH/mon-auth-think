@@ -23,15 +23,13 @@ class Validate extends \mon\util\Validate
         'gid'           => ['required', 'int', 'min:1'],
         'new_gid'       => ['required', 'int', 'min:1'],
         'pid'           => ['required', 'int', 'min:0'],
-        'status'        => ['required', 'int', 'min:0'],
+        'rules'         => ['arr', 'rules'],
         'name'          => ['required', 'str'],
         'title'         => ['required', 'str'],
-        'rules'         => ['arr', 'rules'],
         'remark'        => ['str'],
         'offset'        => ['int', 'min:0'],
         'limit'         => ['int', 'min:1'],
-        'start_time'    => ['timestamp'],
-        'end_time'      => ['timestamp'],
+        'status'        => ['required', 'int', 'min:0'],
     ];
 
     /**
@@ -61,19 +59,19 @@ class Validate extends \mon\util\Validate
      */
     public $scope = [
         // 绑定用户组
-        'access_bind'       => ['uid', 'gid'],
+        'access_bind'   => ['uid', 'gid'],
         // 解除绑定角色组
-        'access_unbind'     => ['uid', 'gid'],
+        'access_unbind' => ['uid', 'gid'],
         // 修改组别用户关联
-        'access_modify'     => ['uid', 'gid', 'new_gid'],
+        'access_modify' => ['uid', 'gid', 'new_gid'],
         // 添加角色组别
-        'group_add'         => ['pid', 'title', 'rules'],
+        'group_add'     => ['pid', 'title', 'rules'],
         // 修改角色组别信息
-        'group_modify'      => ['idx', 'pid', 'title', 'rules', 'status'],
+        'group_modify'  => ['idx', 'pid', 'title', 'rules', 'status'],
         // 增加规则
-        'rule_add'          => ['title', 'pid', 'name', 'remark'],
+        'rule_add'      => ['title', 'pid', 'name', 'remark'],
         // 修改规则
-        'rule_modify'       => ['title', 'pid', 'name', 'remark', 'idx', 'status'],
+        'rule_modify'   => ['title', 'pid', 'name', 'remark', 'idx', 'status'],
     ];
 
     /**

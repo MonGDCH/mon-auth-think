@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace mon\auth\api\dao;
 
-use think\Model;
+use think\facade\Db;
+use mon\auth\api\contract\Dao;
 
 /**
  * 从database数据源中获取数据
@@ -12,8 +13,15 @@ use think\Model;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class DatabaseDao extends Model implements DaoInterface
+class DatabaseDao implements Dao
 {
+    /**
+     * 数据表名称
+     *
+     * @var string
+     */
+    protected $table = 'api_sign';
+
     /**
      * 构造方法
      *
@@ -21,11 +29,8 @@ class DatabaseDao extends Model implements DaoInterface
      */
     public function __construct(array $config)
     {
-        parent::__construct();
         // 定义操作表
         $this->table = $config['table'];
-        // 定义数据库配置
-        $this->config = $config['config'];
     }
 
     /**
@@ -35,7 +40,7 @@ class DatabaseDao extends Model implements DaoInterface
      */
     public function getList(): array
     {
-        return $this->select()->toArray();
+        return Db::table($this->table)->select()->toArray();
     }
 
     /**
@@ -46,7 +51,7 @@ class DatabaseDao extends Model implements DaoInterface
      */
     public function getInfo(string $app_id): array
     {
-        return $this->where(['app_id' => $app_id])->find();
+        return Db::table($this->table)->where('app_id', $app_id)->findOrEmpty();
     }
 
     /**

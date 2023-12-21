@@ -2,9 +2,10 @@
 
 namespace mon\auth\api;
 
-use mon\auth\api\dao\DaoInterface;
+use mon\auth\api\contract\Dao;
+use mon\auth\api\contract\Driver;
 use mon\auth\exception\APIException;
-use mon\auth\api\driver\DriverInterface;
+use mon\auth\api\contract\ApiAuth as ApiAuthInterface;
 
 /**
  * API鉴权服务基类
@@ -31,7 +32,7 @@ abstract class ApiAuth implements ApiAuthInterface
     /**
      * Dao实例
      *
-     * @var DaoInterface
+     * @var Dao
      */
     protected $dao;
 
@@ -84,9 +85,9 @@ abstract class ApiAuth implements ApiAuthInterface
     /**
      * 获取驱动实例
      *
-     * @return DriverInterface
+     * @return Driver
      */
-    abstract public function getDriver(): DriverInterface;
+    abstract public function getDriver(): Driver;
 
     /**
      * 初始化Dao驱动
@@ -98,8 +99,8 @@ abstract class ApiAuth implements ApiAuthInterface
     {
         $config = $this->getConfig('dao');
         $driver = $config['driver'];
-        if (!is_subclass_of($driver, DaoInterface::class)) {
-            throw new APIException('Dao驱动未实现接口[' . DaoInterface::class . ']', APIException::DAO_NOT_SUPPORT);
+        if (!is_subclass_of($driver, Dao::class)) {
+            throw new APIException('Dao驱动未实现接口[' . Dao::class . ']', APIException::DAO_NOT_SUPPORT);
         }
 
         $construct = $config['construct'];
@@ -109,9 +110,9 @@ abstract class ApiAuth implements ApiAuthInterface
     /**
      * 获取Dao实例
      *
-     * @return DaoInterface
+     * @return Dao
      */
-    public function getDao(): DaoInterface
+    public function getDao(): Dao
     {
         return $this->dao;
     }

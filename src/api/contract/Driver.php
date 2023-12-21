@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace mon\auth\api\driver;
+namespace mon\auth\api\contract;
 
 /**
  * 驱动接口
@@ -10,6 +10,6 @@ namespace mon\auth\api\driver;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-interface DriverInterface
+interface Driver
 {
 }

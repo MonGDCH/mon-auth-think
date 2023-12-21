@@ -11,6 +11,11 @@ namespace mon\auth\exception;
 class RbacException extends AuthException
 {
     /**
+     * 权限模块未初始化
+     */
+    const RBAC_AUTH_INIT_ERROR = 20000;
+
+    /**
      * 权限模型不存在
      */
     const RBAC_MODEL_NOT_FOUND = 20100;

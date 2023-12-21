@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace mon\auth\api\dao;
 
+use mon\auth\api\contract\Dao;
+
 /**
  * 从Array数据源中获取数据
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class ArrayDao implements DaoInterface
+class ArrayDao implements Dao
 {
     /**
      * 数据源

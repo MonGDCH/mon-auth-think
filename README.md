@@ -88,27 +88,6 @@ $config = [
     'auth_rule'         => 'auth_rule',
     // 超级管理员权限标志       
     'admin_mark'        => '*',
-    // 数据库配置              
-    'database'          => [
-        // 数据库类型
-        'type'            => 'mysql',
-        // 服务器地址
-        'host'            => '127.0.0.1',
-        // 数据库名
-        'database'        => '',
-        // 用户名
-        'username'        => '',
-        // 密码
-        'password'        => '',
-        // 端口
-        'port'            => '3306',
-        // 数据库编码默认采用utf8
-        'charset'         => 'utf8',
-        // 返回结果集类型
-        'result_type'     => \PDO::FETCH_ASSOC,
-        // 断开自动重连
-        'break_reconnect' => false,
-    ]
 ];
 
 Auth::instance()->init($config);
@@ -185,70 +164,3 @@ $check = SignatureAuth::instance()->check($secret, $tokenData);
 dd($check);
 
 ```
-
-
-#### 版本
-
-> 1.1.2
-
-* 增加`AccessToken`、`ApiSignature`权限控制
-* 重构逻辑代码，优化业务
-* 增强对Gaia框架的支持
-
-
-> 1.1.0
-
-* 优化代码，更新依赖
-* 增强对Gaia框架支持
-
-
-> 1.0.11
-
-* 优化注解
-
-
-> 1.0.10
-
-* 优化代码，优化依赖
-
-
-> 1.0.9
-
-* 优化代码，优化依赖
-
-
-> 1.0.8
-
-* 优化整体代码
-* 增强RBAC模块，支持通过new的方式，同时运多个权限实例
-
-> 1.0.7
-
-* 优化RBAC模块代码
-* 修复修改操作存在的BUG
-
-> 1.0.6
-
-* 补全1.0.5版本发布少的RBAC优化代码
-
-> 1.0.5
-
-* 优化RBAC代码
-* 增加RBAC获取内置模型的model方法
-
-> 1.0.4
-
-* 优化代码，中文化JWT类库
-
-> 1.0.3
-
-* 修复自定义权限表名无效BUG
-
-> 1.0.2
-
-* 完善RBAC权限控制
-* 发布1.0.2 RC版本
-
-> 1.0.1
-
-* 发布第一个版本

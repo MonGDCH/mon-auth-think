@@ -8,6 +8,7 @@ use mon\util\Tool;
 use mon\util\Event;
 use mon\util\Nbed64;
 use mon\util\Instance;
+use mon\auth\api\contract\Driver;
 use mon\auth\exception\ApiException;
 
 /**
@@ -16,7 +17,7 @@ use mon\auth\exception\ApiException;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class AccessToken implements DriverInterface
+class AccessToken implements Driver
 {
     use Instance;
 

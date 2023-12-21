@@ -1,11 +1,13 @@
 <?php
 
-namespace mon\auth\rbac\model;
+namespace mon\auth\rbac\dao;
 
+use Throwable;
 use mon\util\Tree;
-use mon\util\Instance;
+use mon\thinkOrm\Dao;
 use mon\auth\rbac\Auth;
-use mon\orm\exception\DbException;
+use mon\auth\rbac\Validate;
+use mon\auth\exception\RbacException;
 
 /**
  * 权限规则表
@@ -13,16 +15,28 @@ use mon\orm\exception\DbException;
  * @author Mon <985558837@qq.com>
  * @version 1.0.1   优化代码
  */
-class Rule extends Base
+class Rule extends Dao
 {
-    use Instance;
+    /**
+     * Auth实例
+     *
+     * @var Auth
+     */
+    protected $auth;
 
     /**
-     * 表名
+     * 验证器
      *
-     * @var string
+     * @var Validate
      */
-    protected $table;
+    protected $validate = Validate::class;
+
+    /**
+     * 自动写入时间戳
+     *
+     * @var boolean
+     */
+    protected $autoWriteTimestamp = true;
 
     /**
      * 构造方法
@@ -31,26 +45,11 @@ class Rule extends Base
      */
     public function __construct(Auth $auth)
     {
-        parent::__construct($auth);
-        $this->table = $this->auth->getConfig('auth_rule');
-    }
-
-    /**
-     * 获取规则信息
-     *
-     * @param array $where  where条件
-     * @param array $field 查询字段
-     * @return array|false
-     */
-    public function getInfo(array $where, array $field = ['*'])
-    {
-        $info = $this->where($where)->field($field)->find();
-        if (!$info) {
-            $this->error = '规则信息不存在';
-            return false;
+        if (!$auth->isInit()) {
+            throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
         }
-
-        return $info;
+        $this->auth = $auth;
+        $this->table = $this->auth->getConfig('auth_rule');
     }
 
     /**
@@ -65,7 +64,7 @@ class Rule extends Base
         $page = isset($option['page']) ? intval($option['page']) : 1;
         $limit = isset($option['limit']) ? intval($option['limit']) : 10;
 
-        $list = $this->where($where)->page($page, $limit)->select();
+        $list = $this->where($where)->page($page, $limit)->all();
         $count = $this->where($where)->count('id');
 
         return [
@@ -74,20 +73,19 @@ class Rule extends Base
         ];
     }
 
-
     /**
      * 新增规则
      *
      * @param array $option 规则参数
      * @param array $ext    扩展写入字段
-     * @return integer|false
+     * @return integer
      */
-    public function add(array $option, array $ext = [])
+    public function add(array $option, array $ext = []): int
     {
         $check = $this->validate()->scope('rule_add')->data($option)->check();
         if (!$check) {
             $this->error = $this->validate()->getError();
-            return false;
+            return 0;
         }
 
         $info = array_merge($ext, [
@@ -96,10 +94,10 @@ class Rule extends Base
             'name'      => $option['name'],
             'remark'    => $option['remark'] ?? '',
         ]);
-        $rule_id = $this->save($info, null, true);
+        $rule_id = $this->save($info, false, true);
         if (!$rule_id) {
             $this->error = '新增规则失败';
-            return false;
+            return 0;
         }
 
         return $rule_id;
@@ -122,15 +120,16 @@ class Rule extends Base
 
         $idx = $option['idx'];
         $status = $option['status'];
-        $baseInfo = $this->getInfo(['id' => $idx]);
+        $baseInfo = $this->where(['id' => $idx])->get();
         if (!$baseInfo) {
+            $this->error = '规则信息不存在';
             return false;
         }
 
         if ($baseInfo['status'] != $status) {
             // 修改了状态
-            $rules = $this->select();
-            if ($status == '1') {
+            $rules = $this->all();
+            if ($status == $this->auth->getConfig('effective_status')) {
                 // 有效则判断当前节点所有祖先节点是否都为有效状态。
                 $parents = Tree::instance()->data($rules)->getParents($idx);
                 foreach ($parents as $v) {
@@ -148,7 +147,7 @@ class Rule extends Base
                     'remark'    => $option['remark'] ?? '',
                     'status'    => $option['status'],
                 ]);
-                $save = $this->save($info, ['id' => $idx]);
+                $save = $this->where(['id' => $idx])->save($info);
                 if (!$save) {
                     $this->error = '更新规则失败';
                     return false;
@@ -158,7 +157,6 @@ class Rule extends Base
             } else if ($status == $this->auth->getConfig('invalid_status')) {
                 // 无效，同步将所有后代节点下线
                 $childrens = Tree::instance()->data($rules)->getChildrenIds($idx);
-
                 // 更新
                 $this->startTrans();
                 try {
@@ -170,7 +168,7 @@ class Rule extends Base
                         'remark'    => $option['remark'] ?? '',
                         'status'    => $option['status'],
                     ]);
-                    $save = $this->save($info, ['id' => $idx]);
+                    $save = $this->where(['id' => $idx])->save($info);
                     if (!$save) {
                         $this->rollback();
                         $this->error = '更新失败';
@@ -179,7 +177,7 @@ class Rule extends Base
 
                     // 下线后代
                     if (!empty($childrens)) {
-                        $offline = $this->whereIn('id', $childrens)->update(['status' => $option['status'], 'update_time' => time()]);
+                        $offline = $this->where('id', 'IN', $childrens)->update(['status' => $option['status'], 'update_time' => time()]);
                         if (!$offline) {
                             $this->rollback();
                             $this->error = '修改后代权限规则失败';
@@ -190,7 +188,7 @@ class Rule extends Base
                     // 提交事务
                     $this->commit();
                     return true;
-                } catch (DbException $e) {
+                } catch (Throwable $e) {
                     // 回滚事务
                     $this->rollback();
                     $this->error = '修改规则异常, ' . $e->getMessage();
@@ -205,7 +203,7 @@ class Rule extends Base
                 'name'      => $option['name'],
                 'remark'    => $option['remark'] ?? '',
             ]);
-            $save = $this->save($info, ['id' => $idx]);
+            $save = $this->where(['id' => $idx])->save($info);
             if (!$save) {
                 $this->error = '更新失败';
                 return false;

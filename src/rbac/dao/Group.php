@@ -1,11 +1,13 @@
 <?php
 
-namespace mon\auth\rbac\model;
+namespace mon\auth\rbac\dao;
 
+use Throwable;
 use mon\util\Tree;
-use mon\util\Instance;
+use mon\thinkOrm\Dao;
 use mon\auth\rbac\Auth;
-use mon\orm\exception\DbException;
+use mon\auth\rbac\Validate;
+use mon\auth\exception\RbacException;
 
 /**
  * 角色组模型
@@ -13,16 +15,28 @@ use mon\orm\exception\DbException;
  * @author Mon <985558837@qq.com>
  * @version 1.0.1   优化代码
  */
-class Group extends Base
+class Group extends Dao
 {
-    use Instance;
+    /**
+     * Auth实例
+     *
+     * @var Auth
+     */
+    protected $auth;
 
     /**
-     * 表名
+     * 验证器
      *
-     * @var string
+     * @var Validate
      */
-    protected $table;
+    protected $validate = Validate::class;
+
+    /**
+     * 自动写入时间戳
+     *
+     * @var boolean
+     */
+    protected $autoWriteTimestamp = true;
 
     /**
      * 构造方法
@@ -31,26 +45,11 @@ class Group extends Base
      */
     public function __construct(Auth $auth)
     {
-        parent::__construct($auth);
-        $this->table = $this->auth->getConfig('auth_group');
-    }
-
-    /**
-     * 获取角色组信息
-     *
-     * @param array $where where条件
-     * @param array $field 查询字段
-     * @return array|false
-     */
-    public function getInfo(array $where, array $field = ['*'])
-    {
-        $info = $this->where($where)->field($field)->find();
-        if (!$info) {
-            $this->error = '角色组不存在';
-            return false;
+        if (!$auth->isInit()) {
+            throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
         }
-
-        return $info;
+        $this->auth = $auth;
+        $this->table = $this->auth->getConfig('auth_group');
     }
 
     /**
@@ -65,7 +64,7 @@ class Group extends Base
         $page = isset($option['page']) ? intval($option['page']) : 1;
         $limit = isset($option['limit']) ? intval($option['limit']) : 10;
 
-        $list = $this->page($page, $limit)->where($where)->select();
+        $list = $this->where($where)->page($page, $limit)->all();
         $count = $this->where($where)->count('id');
 
         return [
@@ -79,21 +78,21 @@ class Group extends Base
      *
      * @param array $option 组别参数
      * @param array $ext    扩展写入字段
-     * @return integer|false
+     * @return integer
      */
-    public function add(array $option, array $ext = [])
+    public function add(array $option, array $ext = []): int
     {
         $check = $this->validate()->scope('group_add')->data($option)->check();
         if (!$check) {
             $this->error = $this->validate()->getError();
-            return false;
+            return 0;
         }
         // 去除重复的规则
         $rules = array_unique($option['rules']);
         sort($rules);
         // 判断验证组别权限
         if (!$this->diffRuleForPid($option['pid'], $rules)) {
-            return false;
+            return 0;
         }
         // 记录组别信息
         $info = array_merge($ext, [
@@ -101,10 +100,10 @@ class Group extends Base
             'pid'   => $option['pid'],
             'rules' => implode(',', $rules),
         ]);
-        $group_id = $this->save($info, null, true);
+        $group_id = $this->save($info, false, true);
         if (!$group_id) {
             $this->error = '创建权限组失败';
-            return false;
+            return 0;
         }
 
         return $group_id;
@@ -125,8 +124,9 @@ class Group extends Base
             return false;
         }
         // 获取数据
-        $info = $this->getInfo(['id' => $option['idx']]);
+        $info = $this->where(['id' => $option['idx']])->get();
         if (!$info) {
+            $this->error = '角色组不存在';
             return false;
         }
         $modifyRule = false;
@@ -151,7 +151,7 @@ class Group extends Base
         $this->startTrans();
         try {
             // 获取所有组别信息
-            $groups = $this->select();
+            $groups = $this->all();
             // 判断是否修改规则，修改了规则，更新移除后代多余的规则
             if ($modifyRule) {
                 // 比对每一个后代，有规则冲突则更新
@@ -160,7 +160,7 @@ class Group extends Base
                     // 比对子级与父级的权限
                     if (!empty($this->diffRule($rules, $child['rules']))) {
                         $newChildRule = $this->intersectRule($rules, $child['rules']);
-                        $saveChildRule = $this->save(['rules' => implode(',', $newChildRule)], ['id' => $child['id']]);
+                        $saveChildRule = $this->where(['id' => $child['id']])->save(['rules' => implode(',', $newChildRule)]);
                         if (!$saveChildRule) {
                             $this->rollback();
                             $this->error = '更新后代角色组权限规则失败';
@@ -191,7 +191,7 @@ class Group extends Base
                         'rules'     => $rules,
                         'status'    => $status
                     ]);
-                    $save = $this->save($modifyInfo, ['id' => $idx]);
+                    $save = $this->where(['id' => $idx])->save($modifyInfo);
                     if (!$save) {
                         $this->rollback();
                         $this->error = '修改角色组信息失败';
@@ -205,7 +205,7 @@ class Group extends Base
                         'rules'     => implode(',', $rules),
                         'status'    => $status
                     ]);
-                    $save = $this->save($modifyInfo, ['id' => $idx]);
+                    $save = $this->where(['id' => $idx])->save($modifyInfo);
                     if (!$save) {
                         $this->rollback();
                         $this->error = '修改当前角色组信息失败';
@@ -216,7 +216,7 @@ class Group extends Base
                     $childrens = Tree::instance()->data($groups)->getChildrenIds($idx);
                     // 下线后代
                     if ($childrens) {
-                        $offline = $this->whereIn('id', $childrens)->update(['status' => $option['status'], 'update_time' => time()]);
+                        $offline = $this->where('id', 'IN', $childrens)->update(['status' => $option['status'], 'update_time' => time()]);
                         if (!$offline) {
                             $this->rollback();
                             $this->error = '修改后代权限规则失败';
@@ -237,7 +237,7 @@ class Group extends Base
                     'rules'     => implode(',', $rules),
                     'status'    => $status
                 ]);
-                $save = $this->save($modifyInfo, ['id' => $idx]);
+                $save = $this->where(['id' => $idx])->save($modifyInfo);
                 if (!$save) {
                     $this->rollback();
                     $this->error = '修改角色组信息失败';
@@ -247,7 +247,7 @@ class Group extends Base
 
             $this->commit();
             return true;
-        } catch (DbException $e) {
+        } catch (Throwable $e) {
             // 回滚事务
             $this->rollback();
             $this->error = '修改角色组信息异常, ' . $e->getMessage();
@@ -266,7 +266,7 @@ class Group extends Base
     {
         // 存在父级组别，子级组别权限规则必须包含在父级权限规则中
         if ($pid > 0) {
-            $parentInfo = $this->getInfo(['id' => $pid]);
+            $parentInfo = $this->where(['id' => $pid])->get();
             if (!$parentInfo) {
                 $this->error = '父级权限组别不存在';
                 return false;
