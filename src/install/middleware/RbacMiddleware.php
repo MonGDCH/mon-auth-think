@@ -63,7 +63,7 @@ class RbacMiddleware implements Middlewareinterface
      */
     public function getPath(RequestInterface $request): string
     {
-        $path = $request->getPath();
+        $path = $request->path();
 
         $root = $this->getConfig()['root_path'];
         if (!empty($root)) {
@@ -112,7 +112,7 @@ class RbacMiddleware implements Middlewareinterface
             // 错误码
             $code = $this->getService()->getErrorCode();
             // 错误信息
-            $msg = $responseConfig['message'] ? $this->getService()->getError() : '';
+            $msg = $responseConfig['message'] ? $this->getService()->getError() : 'Forbidden';
             return Jump::instance()->result($code, $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
         }
 
