@@ -51,7 +51,7 @@ class RbacService
     protected function __construct()
     {
         $config = Config::instance()->get('auth.rbac', []);
-        $this->service = Auth::instance()->init($this->parseConfig($config));
+        $this->service = Auth::instance()->init($config);
     }
 
     /**
@@ -96,7 +96,6 @@ class RbacService
      */
     public function register(array $config): RbacService
     {
-        $config = $this->parseConfig($config);
         $this->getService()->init($config);
         return $this;
     }
@@ -137,21 +136,5 @@ class RbacService
     public function __call(string $name, $arguments)
     {
         return call_user_func_array([$this->getService(), $name], (array) $arguments);
-    }
-
-    /**
-     * 解析完善配置信息
-     *
-     * @param array $config 配置信息
-     * @return array
-     */
-    protected function parseConfig(array $config): array
-    {
-        if (is_string($config['database'])) {
-            $dbconfig = Config::instance()->get('database.' . $config['database'], []);
-            $config['database'] = $dbconfig;
-        }
-
-        return $config;
     }
 }
