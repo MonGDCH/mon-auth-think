@@ -104,7 +104,7 @@ class AccessTokenMiddleware implements Middlewareinterface
         // 获取Token中的数据
         $data = $this->getService()->getData();
         $key = $config['access_token'];
-        $request->$key = $data;
+        $request->{$key} = $data;
 
         return $callback($request);
     }

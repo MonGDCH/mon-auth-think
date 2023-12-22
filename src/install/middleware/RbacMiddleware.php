@@ -56,6 +56,24 @@ class RbacMiddleware implements Middlewareinterface
     }
 
     /**
+     * 获取验证路径
+     *
+     * @param RequestInterface $request
+     * @return string
+     */
+    public function getPath(RequestInterface $request): string
+    {
+        $path = $request->getPath();
+
+        $root = $this->getConfig()['root_path'];
+        if (!empty($root)) {
+            $path = $root . $path;
+        }
+
+        return $path;
+    }
+
+    /**
      * 中间件实现接口
      *
      * @param RequestInterface $request  请求实例
@@ -72,7 +90,7 @@ class RbacMiddleware implements Middlewareinterface
         // 用户ID键名
         $uid = $config['uid'];
         // 验证登录
-        if (!$request->$uid) {
+        if (!$request->{$uid}) {
             // 不存在用户ID，未登录
             if (!$responseConfig['enable']) {
                 return Jump::instance()->abort($config['noLoginStatus']);
@@ -83,7 +101,7 @@ class RbacMiddleware implements Middlewareinterface
         }
 
         // 验证权限
-        $check = $this->getService()->check($request->path(), $request->$uid);
+        $check = $this->getService()->check($this->getPath($request), $request->{$uid});
         // 权限验证不通过
         if (!$check) {
             // 不需要返回错误信息

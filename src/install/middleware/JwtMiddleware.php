@@ -102,10 +102,10 @@ class JwtMiddleware implements Middlewareinterface
         $data = $this->getService()->getData();
         // 记录用户ID
         $uid = $config['uid'];
-        $request->$uid = $data['aud'];
+        $request->{$uid} = $data['aud'];
         // 记录Token数据
         $jwt = $config['jwt'];
-        $request->$jwt = $data;
+        $request->{$jwt} = $data;
 
         return $callback($request);
     }

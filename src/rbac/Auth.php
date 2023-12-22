@@ -58,7 +58,7 @@ class Auth
         // 有效的状态值
         'effective_status'  => 1,
         // 无效的状态值
-        'invalid_status'    => 0
+        'invalid_status'    => 0,
     ];
 
     /**
