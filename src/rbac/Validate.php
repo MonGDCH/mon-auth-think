@@ -18,18 +18,18 @@ class Validate extends \mon\util\Validate
      * @var array
      */
     public $rule = [
-        'idx'           => ['required', 'int', 'min:1'],
-        'uid'           => ['required', 'int', 'min:1'],
-        'gid'           => ['required', 'int', 'min:1'],
-        'new_gid'       => ['required', 'int', 'min:1'],
-        'pid'           => ['required', 'int', 'min:0'],
-        'rules'         => ['arr', 'rules'],
-        'name'          => ['required', 'str'],
-        'title'         => ['required', 'str'],
-        'remark'        => ['str'],
-        'offset'        => ['int', 'min:0'],
-        'limit'         => ['int', 'min:1'],
-        'status'        => ['required', 'int', 'min:0'],
+        'idx'       => ['required', 'id'],
+        'uid'       => ['required', 'id'],
+        'gid'       => ['required', 'id'],
+        'new_gid'   => ['required', 'id'],
+        'pid'       => ['required', 'int', 'min:0'],
+        'rules'     => ['arr', 'rules'],
+        'name'      => ['required', 'str'],
+        'title'     => ['required', 'str'],
+        'remark'    => ['str'],
+        'offset'    => ['int', 'min:0'],
+        'limit'     => ['id'],
+        'status'    => ['required', 'int', 'min:0'],
     ];
 
     /**
@@ -38,18 +38,18 @@ class Validate extends \mon\util\Validate
      * @var array
      */
     public $message = [
-        'idx'           => 'ID格式错误',
-        'uid'           => '用户ID格式错误',
-        'gid'           => '组别ID格式错误',
-        'new_gid'       => '新组别ID格式错误',
-        'pid'           => '上级ID格式错误',
-        'rules'         => '角色组别规则格式错误',
-        'name'          => '规则标志格式错误',
-        'title'         => '规则名称格式错误',
-        'remark'        => '附加信息格式错误',
-        'offset'        => 'offset格式错误',
-        'limit'         => 'limit格式错误',
-        'status'        => '状态参数错误'
+        'idx'       => 'ID格式错误',
+        'uid'       => '用户ID格式错误',
+        'gid'       => '组别ID格式错误',
+        'new_gid'   => '新组别ID格式错误',
+        'pid'       => '上级ID格式错误',
+        'rules'     => '角色组别规则格式错误',
+        'name'      => '规则标志格式错误',
+        'title'     => '规则名称格式错误',
+        'remark'    => '附加信息格式错误',
+        'offset'    => 'offset格式错误',
+        'limit'     => 'limit格式错误',
+        'status'    => '状态参数错误'
     ];
 
     /**
