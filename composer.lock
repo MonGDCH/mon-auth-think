@@ -4,27 +4,26 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "11e9eb6bd1e9b01ad067d5e4c256880d",
+    "content-hash": "2e54ded08e2d872d9a7798945ba063e7",
     "packages": [
         {
             "name": "mongdch/mon-think-orm",
-            "version": "dev-main",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/MonGDCH/mon-think-orm.git",
-                "reference": "ac0ff77d9fda9b69506e4595a68a4bb9417f7b27"
+                "reference": "78dd8ffc9af513dfb974ad2d366c52f5149bcb74"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/MonGDCH/mon-think-orm/zipball/ac0ff77d9fda9b69506e4595a68a4bb9417f7b27",
-                "reference": "ac0ff77d9fda9b69506e4595a68a4bb9417f7b27",
+                "url": "https://api.github.com/repos/MonGDCH/mon-think-orm/zipball/78dd8ffc9af513dfb974ad2d366c52f5149bcb74",
+                "reference": "78dd8ffc9af513dfb974ad2d366c52f5149bcb74",
                 "shasum": ""
             },
             "require": {
                 "mongdch/mon-util": "^1.4",
                 "topthink/think-orm": "^2.0"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -51,26 +50,26 @@
             ],
             "support": {
                 "issues": "https://github.com/MonGDCH/mon-think-orm/issues",
-                "source": "https://github.com/MonGDCH/mon-think-orm/tree/main"
+                "source": "https://github.com/MonGDCH/mon-think-orm/tree/1.0.0"
             },
-            "time": "2023-12-21T01:06:45+00:00"
+            "time": "2024-01-27T08:20:18+00:00"
         },
         {
             "name": "mongdch/mon-util",
-            "version": "1.4.10",
+            "version": "1.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/MonGDCH/mon-util.git",
-                "reference": "fb4fad01e79b501b58ecacd13b76e7f8c2589a65"
+                "reference": "eb2a585f9ad3991c07f8227d238b67e505a1bd75"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/MonGDCH/mon-util/zipball/fb4fad01e79b501b58ecacd13b76e7f8c2589a65",
-                "reference": "fb4fad01e79b501b58ecacd13b76e7f8c2589a65",
+                "url": "https://api.github.com/repos/MonGDCH/mon-util/zipball/eb2a585f9ad3991c07f8227d238b67e505a1bd75",
+                "reference": "eb2a585f9ad3991c07f8227d238b67e505a1bd75",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.6.0",
+                "php": ">=7.2.0",
                 "psr/container": "1.0.0"
             },
             "type": "library",
@@ -103,9 +102,9 @@
             ],
             "support": {
                 "issues": "https://github.com/MonGDCH/mon-util/issues",
-                "source": "https://github.com/MonGDCH/mon-util/tree/1.4.10"
+                "source": "https://github.com/MonGDCH/mon-util/tree/1.5.1"
             },
-            "time": "2023-12-13T09:20:28+00:00"
+            "time": "2024-01-27T01:34:29+00:00"
         },
         {
             "name": "psr/container",
@@ -366,9 +365,7 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "mongdch/mon-think-orm": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
