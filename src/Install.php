@@ -59,6 +59,35 @@ class Install
      *
      * @return void
      */
+    public static function install()
+    {
+        echo 'Mon-Auth installation successful, please execute `php gaia vendor:publish mon\auth`' . PHP_EOL;
+    }
+
+    /**
+     * 更新升级
+     *
+     * @return void
+     */
+    public static function update()
+    {
+        echo 'Mon-Auth upgrade successful, please execute `php gaia vendor:publish mon\auth`' . PHP_EOL;
+    }
+
+    /**
+     * 卸载
+     *
+     * @return void
+     */
+    public static function uninstall()
+    {
+    }
+
+    /**
+     * 安装
+     *
+     * @return void
+     */
     public static function publish()
     {
         // 创建框架文件
