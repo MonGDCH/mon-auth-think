@@ -4,7 +4,7 @@ namespace mon\auth\rbac\dao;
 
 use Throwable;
 use mon\util\Tree;
-use mon\thinkOrm\Dao;
+use mon\thinkORM\Dao;
 use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacException;

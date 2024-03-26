@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace mon\auth\rbac\dao;
 
-use mon\thinkOrm\Dao;
+use mon\thinkORM\Dao;
 use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacException;

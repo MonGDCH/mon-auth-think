@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace mon\auth\rbac;
 
 use mon\util\Event;
-use mon\thinkOrm\Dao;
+use mon\thinkORM\Dao;
 use mon\util\Instance;
 use mon\auth\exception\RbacException;
 

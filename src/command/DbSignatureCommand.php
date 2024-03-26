@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace mon\auth\Command;
 
-use mon\orm\Db;
 use mon\util\Sql;
 use mon\env\Config;
+use think\facade\Db;
 use mon\console\Input;
 use mon\console\Output;
 use mon\console\Command;

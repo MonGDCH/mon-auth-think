@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "mongdch/mon-think-orm",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/MonGDCH/mon-think-orm.git",
-                "reference": "2dd16deebb77fa8f94e03f9ccc4cb7b5c19de6f5"
+                "reference": "e6ae027f4217cfa0f9b5b7d4b2903e05ba152330"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/MonGDCH/mon-think-orm/zipball/2dd16deebb77fa8f94e03f9ccc4cb7b5c19de6f5",
-                "reference": "2dd16deebb77fa8f94e03f9ccc4cb7b5c19de6f5",
+                "url": "https://api.github.com/repos/MonGDCH/mon-think-orm/zipball/e6ae027f4217cfa0f9b5b7d4b2903e05ba152330",
+                "reference": "e6ae027f4217cfa0f9b5b7d4b2903e05ba152330",
                 "shasum": ""
             },
             "require": {
@@ -27,7 +27,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "mon\\thinkOrm\\": "src"
+                    "mon\\thinkORM\\": "src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -50,9 +50,9 @@
             ],
             "support": {
                 "issues": "https://github.com/MonGDCH/mon-think-orm/issues",
-                "source": "https://github.com/MonGDCH/mon-think-orm/tree/1.0.2"
+                "source": "https://github.com/MonGDCH/mon-think-orm/tree/1.0.3"
             },
-            "time": "2024-03-07T03:17:19+00:00"
+            "time": "2024-03-26T09:39:28+00:00"
         },
         {
             "name": "mongdch/mon-util",
