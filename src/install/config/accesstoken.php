@@ -41,28 +41,13 @@ return [
     ],
     // 中间件配置
     'middleware'    => [
+        // 中间件回调处理
+        'handler'       => \support\auth\middleware\handler\ErrorHandler::class,
         // 请求参数中AppID键名
         'appid_name'    => 'app_id',
         // 请求参数中Token键名
         'token_name'    => 'access_token',
         // Token数据在Request实例的属性名
-        'access_token'  => 'access_token',
-        // 不存在Token的HTTP状态码
-        'noTokenStauts' => 400,
-        // 错误信息
-        'response'      => [
-            // 是否返回错误信息
-            'enable'        => true,
-            // HTTP状态码
-            'status'        => 403,
-            // 返回数据类型, json 或 xml
-            'dataType'      => 'json',
-            // 是否输出错误信息, enable 为 true 时有效
-            'message'       => false,
-            // 未登录返回状态码
-            'noTokenCode'   => 400,
-            // 未登录错误信息，message 为 true 时有效
-            'noTokenMsg'    => 'Token params invalid!',
-        ],
+        'access_token'  => 'access_token'
     ],
 ];

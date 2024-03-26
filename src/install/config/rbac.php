@@ -22,26 +22,11 @@ return [
     'invalid_status'    => 0,
     // 中间件配置
     'middleware'        => [
+        // 中间件回调处理
+        'handler'   => \support\auth\middleware\handler\ErrorHandler::class,
         // Request实例中用户ID的属性名
-        'uid'           => 'uid',
-        // 未登录HTTP状态码
-        'noLoginStatus' => 401,
+        'uid'       => 'uid',
         // 权限验证根路径
-        'root_path'     => '',
-        // 错误信息
-        'response'      => [
-            // 是否返回错误信息
-            'enable'        => true,
-            // HTTP状态码
-            'status'        => 403,
-            // 返回数据类型, json 或 xml
-            'dataType'      => 'json',
-            // 是否输出错误信息, enable 为 true 时有效
-            'message'       => false,
-            // 未登录返回状态码
-            'noLoginCode'   => 401,
-            // 未登录错误信息，message 为 true 时有效
-            'noLoginMsg'    => '未登录',
-        ],
+        'root_path' => ''
     ],
 ];

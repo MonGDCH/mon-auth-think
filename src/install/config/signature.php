@@ -32,16 +32,7 @@ return [
     ],
     // 中间件配置
     'middleware'    => [
-        // 错误信息
-        'response'      => [
-            // 是否返回错误信息
-            'enable'    => true,
-            // HTTP状态码
-            'status'    => 400,
-            // 返回数据类型, json 或 xml
-            'dataType'  => 'json',
-            // 是否输出错误信息, enable 为 true 时有效
-            'message'   => false,
-        ],
+        // 中间件回调处理
+        'handler'   => \support\auth\middleware\handler\ErrorHandler::class,
     ],
 ];

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace support\auth\middleware;
 
 use Closure;
-use mon\http\Jump;
 use mon\env\Config;
 use mon\http\Response;
+use mon\auth\ErrorHandlerInterface;
 use support\auth\AccessTokenService;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
@@ -28,6 +28,13 @@ class AccessTokenMiddleware implements Middlewareinterface
     protected $config = [];
 
     /**
+     * 回调处理
+     *
+     * @var mixed
+     */
+    protected $handler;
+
+    /**
      * 构造方法
      */
     public function __construct()
@@ -46,16 +53,6 @@ class AccessTokenMiddleware implements Middlewareinterface
     }
 
     /**
-     * 获取服务
-     *
-     * @return AccessTokenService
-     */
-    public function getService(): AccessTokenService
-    {
-        return AccessTokenService::instance();
-    }
-
-    /**
      * 中间件实现接口
      *
      * @param RequestInterface $request  请求实例
@@ -66,39 +63,24 @@ class AccessTokenMiddleware implements Middlewareinterface
     {
         // 中间件配置
         $config = $this->getConfig();
-        // 响应信息配置
-        $responseConfig = $config['response'];
-
         // 应用ID
         $appid = $this->getRequestData($request, $config['appid_name']);
         // Token
         $token = $this->getRequestData($request, $config['token_name']);
-
         // 验证参数
         if (empty($token) || empty($appid)) {
             // 不存在APPID或Token
-            if (!$responseConfig['enable']) {
-                return Jump::instance()->abort($config['noTokenStauts']);
-            }
-
-            // 错误信息
-            $msg = $responseConfig['message'] ? $responseConfig['noTokenMsg'] : '';
-            return Jump::instance()->result($responseConfig['noTokenCode'], $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
+            return $this->getHandler()->notFound();
         }
 
         // 验证签名
         $check = $this->getService()->checkToken($token, $appid);
         if (!$check) {
-            // 不需要返回错误信息
-            if (!$responseConfig['enable']) {
-                return Jump::instance()->abort($responseConfig['status']);
-            }
-
             // 错误码
             $code = $this->getService()->getErrorCode();
             // 错误信息
-            $msg = $responseConfig['message'] ? $this->getService()->getError() : '';
-            return Jump::instance()->result($code, $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
+            $msg = $this->getService()->getError();
+            return $this->getHandler()->checkError($code, $msg);
         }
 
         // 获取Token中的数据
@@ -126,5 +108,29 @@ class AccessTokenMiddleware implements Middlewareinterface
         }
 
         return $value;
+    }
+
+    /**
+     * 获取错误处理回调
+     *
+     * @return mixed
+     */
+    public function getHandler(): ErrorHandlerInterface
+    {
+        if (is_null($this->handler)) {
+            $this->handler = new $this->config['handler']($this->config);
+        }
+
+        return $this->handler;
+    }
+
+    /**
+     * 获取服务
+     *
+     * @return AccessTokenService
+     */
+    public function getService(): AccessTokenService
+    {
+        return AccessTokenService::instance();
     }
 }

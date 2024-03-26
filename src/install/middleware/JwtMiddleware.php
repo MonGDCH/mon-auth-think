@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace support\auth\middleware;
 
 use Closure;
-use mon\http\Jump;
 use mon\env\Config;
 use mon\http\Response;
 use support\auth\JwtService;
+use InvalidArgumentException;
+use mon\auth\ErrorHandlerInterface;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
 
@@ -26,6 +27,13 @@ class JwtMiddleware implements Middlewareinterface
      * @var array
      */
     protected $config = [];
+
+    /**
+     * 回调处理
+     *
+     * @var mixed
+     */
+    protected $handler;
 
     /**
      * 构造方法
@@ -46,16 +54,6 @@ class JwtMiddleware implements Middlewareinterface
     }
 
     /**
-     * 获取服务
-     *
-     * @return JwtService
-     */
-    public function getService(): JwtService
-    {
-        return JwtService::instance();
-    }
-
-    /**
      * 中间件实现接口
      *
      * @param RequestInterface $request  请求实例
@@ -66,36 +64,21 @@ class JwtMiddleware implements Middlewareinterface
     {
         // 中间件配置
         $config = $this->getConfig();
-        // 响应信息配置
-        $responseConfig = $config['response'];
-
-        // 获取Token
-        $token = $request->header($config['header']);
+        // 获取Token，优先的请求头中获取，不存在则从cookie中获取
+        $token = $this->getToken($request);
         if (!$token) {
-            // 不存在Token
-            if (!$responseConfig['enable']) {
-                return Jump::instance()->abort($config['noTokenStauts']);
-            }
-
-            // 错误信息
-            $msg = $responseConfig['message'] ? $responseConfig['noTokenMsg'] : '';
-            return Jump::instance()->result($responseConfig['noTokenCode'], $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
+            return $this->getHandler()->notFound();
         }
 
         // 验证Token
         $check = $this->getService()->check($token);
         // Token验证不通过
         if (!$check) {
-            // 不需要返回错误信息
-            if (!$responseConfig['enable']) {
-                return Jump::instance()->abort($responseConfig['status']);
-            }
-
             // 错误码
             $code = $this->getService()->getErrorCode();
             // 错误信息
-            $msg = $responseConfig['message'] ? $this->getService()->getError() : '';
-            return Jump::instance()->result($code, $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
+            $msg = $this->getService()->getError();
+            return $this->getHandler()->checkError($code, $msg);
         }
 
         // 获取Token数据
@@ -108,5 +91,48 @@ class JwtMiddleware implements Middlewareinterface
         $request->{$jwt} = $data;
 
         return $callback($request);
+    }
+
+    /**
+     * 获取Token
+     *
+     * @param RequestInterface $request
+     * @return string
+     */
+    public function getToken(RequestInterface $request): string
+    {
+        if (!$this->config['header']) {
+            throw new InvalidArgumentException('JWT header key is required');
+        }
+        $token = $request->header($this->config['header'], '');
+        if (!$token && !empty($this->config['cookie'])) {
+            $token = $request->cookie($this->config['cookie'], '');
+        }
+
+        return $token;
+    }
+
+    /**
+     * 获取错误处理回调
+     *
+     * @return mixed
+     */
+    public function getHandler(): ErrorHandlerInterface
+    {
+        if (is_null($this->handler)) {
+            $this->handler = new $this->config['handler']($this->config);
+        }
+
+        return $this->handler;
+    }
+
+    /**
+     * 获取服务
+     *
+     * @return JwtService
+     */
+    public function getService(): JwtService
+    {
+        return JwtService::instance();
     }
 }

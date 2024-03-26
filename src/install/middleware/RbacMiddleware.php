@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace support\auth\middleware;
 
 use Closure;
-use mon\http\Jump;
 use mon\env\Config;
 use mon\http\Response;
 use support\auth\RbacService;
+use mon\auth\ErrorHandlerInterface;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
 
@@ -26,6 +26,13 @@ class RbacMiddleware implements Middlewareinterface
      * @var array
      */
     protected $config = [];
+
+    /**
+     * 回调处理
+     *
+     * @var mixed
+     */
+    protected $handler;
 
     /**
      * 构造方法
@@ -46,13 +53,36 @@ class RbacMiddleware implements Middlewareinterface
     }
 
     /**
-     * 获取服务
+     * 中间件实现接口
      *
-     * @return RbacService
+     * @param RequestInterface $request  请求实例
+     * @param Closure $callback 执行下一个中间件回调方法
+     * @return Response
      */
-    public function getService(): RbacService
+    public function process(RequestInterface $request, Closure $callback): Response
     {
-        return RbacService::instance();
+        // 中间件配置
+        $config = $this->getConfig();
+        // 用户ID键名
+        $uid = $config['uid'];
+        // 验证登录
+        if (!$request->{$uid}) {
+            // 不存在用户ID，未登录
+            return $this->getHandler()->notFound();
+        }
+
+        // 验证权限
+        $check = $this->getService()->check($this->getPath($request), $request->{$uid});
+        // 权限验证不通过
+        if (!$check) {
+            // 错误码
+            $code = $this->getService()->getErrorCode();
+            // 错误信息
+            $msg = $this->getService()->getError();
+            return $this->getHandler()->checkError($code, $msg);
+        }
+
+        return $callback($request);
     }
 
     /**
@@ -74,48 +104,26 @@ class RbacMiddleware implements Middlewareinterface
     }
 
     /**
-     * 中间件实现接口
+     * 获取错误处理回调
      *
-     * @param RequestInterface $request  请求实例
-     * @param Closure $callback 执行下一个中间件回调方法
-     * @return Response
+     * @return mixed
      */
-    public function process(RequestInterface $request, Closure $callback): Response
+    public function getHandler(): ErrorHandlerInterface
     {
-        // 中间件配置
-        $config = $this->getConfig();
-        // 响应信息配置
-        $responseConfig = $config['response'];
-
-        // 用户ID键名
-        $uid = $config['uid'];
-        // 验证登录
-        if (!$request->{$uid}) {
-            // 不存在用户ID，未登录
-            if (!$responseConfig['enable']) {
-                return Jump::instance()->abort($config['noLoginStatus']);
-            }
-            // 错误信息
-            $msg = $responseConfig['message'] ? $responseConfig['noLoginMsg'] : '';
-            return Jump::instance()->result($responseConfig['noLoginCode'], $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
+        if (is_null($this->handler)) {
+            $this->handler = new $this->config['handler']($this->config);
         }
 
-        // 验证权限
-        $check = $this->getService()->check($this->getPath($request), $request->{$uid});
-        // 权限验证不通过
-        if (!$check) {
-            // 不需要返回错误信息
-            if (!$responseConfig['enable']) {
-                return Jump::instance()->abort($responseConfig['status']);
-            }
+        return $this->handler;
+    }
 
-            // 错误码
-            $code = $this->getService()->getErrorCode();
-            // 错误信息
-            $msg = $responseConfig['message'] ? $this->getService()->getError() : 'Forbidden';
-            return Jump::instance()->result($code, $msg, [], [], $responseConfig['dataType'], $responseConfig['status']);
-        }
-
-        return $callback($request);
+    /**
+     * 获取服务
+     *
+     * @return RbacService
+     */
+    public function getService(): RbacService
+    {
+        return RbacService::instance();
     }
 }
