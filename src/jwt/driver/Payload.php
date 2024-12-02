@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace mon\auth\jwt\driver;
 
-use ArrayAccess;
 use mon\auth\exception\JwtException;
 
 /**
@@ -13,7 +12,7 @@ use mon\auth\exception\JwtException;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class Payload implements ArrayAccess
+class Payload
 {
     /**
      * JWT生存时间
@@ -236,50 +235,5 @@ class Payload implements ArrayAccess
     public function __get(string $key)
     {
         return isset($this->data[$key]) ? $this->data[$key] : null;
-    }
-
-    /**
-     * isset
-     *
-     * @param  string $offset  key值
-     * @return boolean
-     */
-    public function offsetExists($offset): bool
-    {
-        return isset($this->data[$offset]);
-    }
-
-    /**
-     * get
-     *
-     * @param  string $offset  key值
-     * @return mixed
-     */
-    public function offsetGet($offset)
-    {
-        return isset($this->data[$offset]) ? $this->data[$offset] : null;
-    }
-
-    /**
-     * set
-     *
-     * @param  string $offset key值
-     * @param  mixed $value value值
-     * @return void
-     */
-    public function offsetSet($offset, $value): void
-    {
-        $this->data[$offset] = $value;
-    }
-
-    /**
-     * unset
-     *
-     * @param  string $offset key值
-     * @return void
-     */
-    public function offsetUnset($offset): void
-    {
-        unset($this->data[$offset]);
     }
 }
