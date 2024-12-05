@@ -64,9 +64,7 @@ class Auth
     /**
      * 私有化构造方法
      */
-    protected function __construct()
-    {
-    }
+    protected function __construct() {}
 
     /**
      * 初始化方法
@@ -125,28 +123,28 @@ class Auth
     /**
      * 校验权限
      *
-     * @param  string|array $name       需要验证的规则列表,支持字符串的单个权限规则或索引数组多个权限规则
+     * @param  string|array $rule       需要验证的规则列表,支持字符串的单个权限规则或索引数组多个权限规则
      * @param  integer|string   $uid    认证用户的id
      * @param  boolean  $relation       如果为 true 表示满足任一条规则即通过验证;如果为 false 则表示需满足所有规则才能通过验证
      * @throws RbacException
      * @return boolean
      */
-    public function check($name, $uid, bool $relation = true): bool
+    public function check($rule, $uid, bool $relation = true): bool
     {
         // 获取用户需要验证的所有有效规则列表
         $authList = $this->getAuthList($uid);
         if (in_array($this->config['admin_mark'], (array) $authList)) {
             // 触发rack权限验证事件
-            $this->triggerEvent($uid, $name, 'admin', $authList, $relation);
+            $this->triggerEvent($uid, $rule, 'admin', $authList, $relation);
             // 具备所有权限
             return true;
         }
 
         // 获取需求验证的规则
-        if (is_string($name)) {
-            $name = [strtolower($name)];
-        } else if (is_array($name)) {
-            $name = array_map('strtolower', $name);
+        if (is_string($rule)) {
+            $rule = [strtolower($rule)];
+        } else if (is_array($rule)) {
+            $rule = array_map('strtolower', $rule);
         } else {
             throw new RbacException('不支持的规则类型，只支持string、array类型', RbacException::RBAC_RULE_NOT_SUPPORT);
         }
@@ -154,20 +152,20 @@ class Auth
         $list = [];
         // 验证权限
         foreach ($authList as $auth) {
-            if (in_array($auth, $name)) {
+            if (in_array($auth, $rule)) {
                 $list[] = $auth;
             }
         }
         // 判断验证规则
         if ($relation == true && !empty($list)) {
             // 触发rack权限验证事件
-            $this->triggerEvent($uid, $name, 'check', $list, $relation);
+            $this->triggerEvent($uid, $rule, 'check', $list, $relation);
             return true;
         }
-        $diff = array_diff($name, $list);
+        $diff = array_diff($rule, $list);
         if ($relation == false && empty($diff)) {
             // 触发rack权限验证事件
-            $this->triggerEvent($uid, $name, 'diff', $diff, $relation);
+            $this->triggerEvent($uid, $rule, 'diff', $diff, $relation);
             return true;
         }
 
@@ -184,9 +182,14 @@ class Auth
     {
         // 获取规则节点
         $ids = [];
-        $groups = $this->dao('access')->getUserGroup($uid);
+        /** @var \mon\auth\rbac\dao\Access $dao 关联表Dao */
+        $dao = $this->dao('access');
+        $groups = $dao->getUserGroup($uid);
         foreach ($groups as $v) {
-            $ids = array_merge($ids, explode(',', trim($v['rules'], ',')));
+            if (!$v || !trim($v['rules'], ',')) {
+                continue;
+            }
+            $ids = array_merge($ids, array_map('trim', explode(',', trim($v['rules'], ','))));
         }
 
         return array_unique($ids);
@@ -214,7 +217,10 @@ class Auth
         // 获取权限规则
         $rules = $this->getRule($uid);
         foreach ($rules as $rule) {
-            $authList[] = strtolower($rule['name']);
+            if (!$rule) {
+                continue;
+            }
+            $authList[] = strtolower($rule['rule']);
         }
 
         return array_unique($authList);
@@ -234,8 +240,10 @@ class Auth
             return [];
         }
         // 构造查询条件
-        $query = $this->dao('rule')->field('id, pid, name, title')->where('status', $this->config['effective_status']);
-        if (!in_array($this->config['admin_mark'], (array) $ids)) {
+        /** @var \mon\auth\rbac\dao\Rule $dao 规则表Dao */
+        $dao = $this->dao('rule');
+        $query = $dao->field(['id', 'pid', 'rule', 'title'])->where('status', $this->config['effective_status']);
+        if (!in_array($this->config['admin_mark'], $ids)) {
             $query->where('id', 'IN', $ids);
         }
         // 获取权限规则
@@ -269,19 +277,19 @@ class Auth
      * 触发验证事件
      *
      * @param string|integer $uid   用户ID
-     * @param string|array $name  验证规则名称
+     * @param string|array   $rule  验证规则名称
      * @param string $type  验证事件类型
      * @param array $auth   权限列表
      * @param boolean $relation 是否需要满足全部规则通过才通过
      * @return void
      */
-    protected function triggerEvent($uid, $name, string $type, array $auth,  bool $relation)
+    protected function triggerEvent($uid, $rule, string $type, array $auth,  bool $relation)
     {
         Event::instance()->trigger('rbac_check', [
             'type' => $type,
             'auth' => $auth,
             'uid'  => $uid,
-            'name' => $name,
+            'rule' => $rule,
             'relation' => $relation
         ]);
     }

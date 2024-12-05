@@ -91,7 +91,7 @@ class Rule extends Dao
         $info = array_merge($ext, [
             'pid'       => $option['pid'],
             'title'     => $option['title'],
-            'name'      => $option['name'],
+            'rule'      => $option['rule'],
             'remark'    => $option['remark'] ?? '',
         ]);
         $rule_id = $this->save($info, false, true);
@@ -143,7 +143,7 @@ class Rule extends Dao
                 $info = array_merge($ext, [
                     'pid'       => $option['pid'],
                     'title'     => $option['title'],
-                    'name'      => $option['name'],
+                    'rule'      => $option['rule'],
                     'remark'    => $option['remark'] ?? '',
                     'status'    => $option['status'],
                 ]);
@@ -164,7 +164,7 @@ class Rule extends Dao
                     $info = array_merge($ext, [
                         'pid'       => $option['pid'],
                         'title'     => $option['title'],
-                        'name'      => $option['name'],
+                        'rule'      => $option['rule'],
                         'remark'    => $option['remark'] ?? '',
                         'status'    => $option['status'],
                     ]);
@@ -200,7 +200,7 @@ class Rule extends Dao
             $info = array_merge($ext, [
                 'pid'       => $option['pid'],
                 'title'     => $option['title'],
-                'name'      => $option['name'],
+                'rule'      => $option['rule'],
                 'remark'    => $option['remark'] ?? '',
             ]);
             $save = $this->where(['id' => $idx])->save($info);

@@ -24,7 +24,7 @@ class Validate extends \mon\util\Validate
         'new_gid'   => ['required', 'id'],
         'pid'       => ['required', 'int', 'min:0'],
         'rules'     => ['arr', 'rules'],
-        'name'      => ['required', 'str'],
+        'rule'      => ['required', 'str'],
         'title'     => ['required', 'str'],
         'remark'    => ['str'],
         'offset'    => ['int', 'min:0'],
@@ -44,7 +44,7 @@ class Validate extends \mon\util\Validate
         'new_gid'   => '新组别ID格式错误',
         'pid'       => '上级ID格式错误',
         'rules'     => '角色组别规则格式错误',
-        'name'      => '规则标志格式错误',
+        'rule'      => '规则标志格式错误',
         'title'     => '规则名称格式错误',
         'remark'    => '附加信息格式错误',
         'offset'    => 'offset格式错误',
@@ -69,9 +69,9 @@ class Validate extends \mon\util\Validate
         // 修改角色组别信息
         'group_modify'  => ['idx', 'pid', 'title', 'rules', 'status'],
         // 增加规则
-        'rule_add'      => ['title', 'pid', 'name', 'remark'],
+        'rule_add'      => ['title', 'pid', 'rule', 'remark'],
         // 修改规则
-        'rule_modify'   => ['title', 'pid', 'name', 'remark', 'idx', 'status'],
+        'rule_modify'   => ['title', 'pid', 'rule', 'remark', 'idx', 'status'],
     ];
 
     /**

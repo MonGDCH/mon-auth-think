@@ -25,9 +25,9 @@ return [
         // 中间件回调处理
         'handler'   => \support\auth\middleware\handler\ErrorHandler::class,
         // 请求头token名
-        'header'    => 'Mon-Auth-Token',
+        'header'    => 'X-Authorization',
         // cookie的token名
-        'cookie'    => 'Mon-Auth-Token',
+        'cookie'    => 'X-Authorization',
         // 用户ID(aud)在Request实例的属性名
         'uid'       => 'uid',
         // Token数据在Request实例的属性名

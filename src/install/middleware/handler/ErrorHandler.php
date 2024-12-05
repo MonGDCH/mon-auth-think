@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace support\auth\middleware\handler;
 
-use mon\http\Jump;
 use mon\http\Response;
 use mon\auth\ErrorHandlerInterface;
+use mon\http\exception\BusinessException;
 
 /**
  * 权限错误处理
@@ -40,7 +40,7 @@ class ErrorHandler implements ErrorHandlerInterface
      */
     public function notFound(): Response
     {
-        return Jump::instance()->result(401, 'Token params invalid!', [], [], 'json', 401);
+        throw new BusinessException('Not found token!', 401, [], 401);
     }
 
     /**
@@ -52,6 +52,6 @@ class ErrorHandler implements ErrorHandlerInterface
      */
     public function checkError(int $code, string $msg): Response
     {
-        return Jump::instance()->result($code, $msg, [], [], 'json', 403);
+        throw new BusinessException($msg, $code, [], 403);
     }
 }
