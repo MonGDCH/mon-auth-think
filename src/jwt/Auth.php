@@ -26,16 +26,16 @@ class Auth
      */
     protected $config = [
         // 加密key
-        'key'       => 'gASQas^(&f654#~!@_+sdaw35',
+        'key'       => 'gAS!Qa)s^(&f*#654#~!@_+sdaw35',
         // 加密算法
         'alg'       => 'HS256',
-        // 签发单位
+        // 默认签发单位
         'iss'       => 'Gaia-Auth',
-        // 签发主题
+        // 默认签发主题
         'sub'       => 'User-Auth',
-        // 生效时间，签发时间 + nbf
+        // 默认生效时间，签发时间 + nbf
         'nbf'       => 0,
-        // 有效时间，生效时间 + exp
+        // 默认有效时间，生效时间 + exp
         'exp'       => 3600,
     ];
 
@@ -71,21 +71,29 @@ class Auth
      *
      * @param int|string $aud   面向的用户ID
      * @param array $ext        扩展的JWT内容
+     * @param string $sub       签发主题
+     * @param string $iss       签发单位
+     * @param integer $exp      有效时间
+     * @param integer $nbf      生效时间
      * @param mixed $jti        jwt编号
      * @throws JwtException
      * @return string
      */
-    public function create($aud, array $ext = [], $jti = null): string
+    public function create($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
     {
         $payload = new Payload();
         // 设置签发单位
-        $payload->setIss($this->getConfig('iss'));
+        $iss = $iss ?: $this->getConfig('iss');
+        $payload->setIss($iss);
         // 设置签发主题
-        $payload->setSub($this->getConfig('sub'));
+        $sub = $sub ?: $this->getConfig('sub');
+        $payload->setSub($sub);
         // 设置生效时间
-        $payload->setNbf($this->getConfig('nbf'));
+        $nbf = $nbf > 0 ? $nbf : $this->getConfig('nbf');
+        $payload->setNbf($nbf);
         // 设置有效时间
-        $payload->setExp($this->getConfig('exp'));
+        $exp = $exp > 0 ? $exp : $this->getConfig('exp');
+        $payload->setExp($exp);
         // 设置接收用户
         $payload->setAud($aud);
         // 设置扩展的数据
@@ -102,20 +110,22 @@ class Auth
      * 验证jwt数据
      *
      * @param string $jwt   jwt数据
+     * @param string $sub   签发主题
+     * @param string $iss   签发单位
      * @throws JwtException
      * @return array    解析后的payload
      */
-    public function check(string $jwt): array
+    public function check(string $jwt, string $sub = '', string $iss = ''): array
     {
         // 获取jwt内容
         $payload = Token::instance()->parse($jwt, $this->getConfig('key'), $this->getConfig('alg'));
         // 验证签发单位
-        $iss = $this->getConfig('iss');
+        $iss = $iss ?: $this->getConfig('iss');
         if ($iss && (!isset($payload['iss']) || $payload['iss'] != $iss)) {
             throw new JwtException('Token Iss 异常', JwtException::JWT_PAYLOAD_ISS_ERROR);
         }
         // 验证签发主题
-        $sub = $this->getConfig('sub');
+        $sub = $sub ?: $this->getConfig('sub');
         if ($sub && (!isset($payload['sub']) || $payload['sub'] != $sub)) {
             throw new JwtException('Token Sub 异常', JwtException::JWT_PAYLOAD_SUB_ERROR);
         }

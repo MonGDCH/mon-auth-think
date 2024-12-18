@@ -115,28 +115,34 @@ class JwtService
     /**
      * 创建Token
      *
-     * @param integer|string $uid   用户ID
-     * @param array $ext            扩展内容
-     * @param integer|string $jti   TokenID
+     * @param int|string $aud   面向的用户ID
+     * @param array $ext        扩展的JWT内容
+     * @param string $sub       签发主题
+     * @param string $iss       签发单位
+     * @param integer $exp      有效时间
+     * @param integer $nbf      生效时间
+     * @param mixed $jti        jwt编号
      * @throws JwtException
      * @return string
      */
-    public function create($uid, array $ext = [], $jti = null): string
+    public function create($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
     {
-        return $this->getService()->create($uid, $ext, $jti);
+        return $this->getService()->create($aud, $ext, $sub, $iss, $exp, $nbf, $jti);
     }
 
     /**
      * 验证Token
      *
-     * @param string $token Token
+     * @param string $jwt   jwt数据
+     * @param string $sub   签发主题
+     * @param string $iss   签发单位
      * @return boolean
      */
-    public function check(string $token): bool
+    public function check(string $jwt, string $sub = '', string $iss = ''): bool
     {
         try {
             // 解析获取Token数据，失败则抛出异常
-            $this->data = $this->getService()->check($token);
+            $this->data = $this->getService()->check($jwt, $sub, $iss);
             return true;
         } catch (JwtException $e) {
             $this->error = $e->getMessage();

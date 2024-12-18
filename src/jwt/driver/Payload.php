@@ -36,7 +36,7 @@ class Payload
     protected $data = [];
 
     /**
-     * 设置iss, 签发者
+     * 设置iss, 签发单位
      *
      * @param  mixed $issuer 签发者
      * @return Payload
@@ -58,7 +58,7 @@ class Payload
     }
 
     /**
-     * 设置sub, 所面向的用户
+     * 设置sub, 签发主题
      *
      * @param  mixed $issuer 所面向的用户
      * @return Payload
