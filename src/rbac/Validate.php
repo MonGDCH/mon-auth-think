@@ -18,7 +18,7 @@ class Validate extends \mon\util\Validate
      * @var array
      */
     public $rule = [
-        'idx'       => ['required', 'id'],
+        'id'       => ['required', 'id'],
         'uid'       => ['required', 'id'],
         'gid'       => ['required', 'id'],
         'new_gid'   => ['required', 'id'],
@@ -29,6 +29,7 @@ class Validate extends \mon\util\Validate
         'remark'    => ['str'],
         'offset'    => ['int', 'min:0'],
         'limit'     => ['id'],
+        'is_rule'   => ['required', 'in:0,1'],
         'status'    => ['required', 'int', 'min:0'],
     ];
 
@@ -38,7 +39,7 @@ class Validate extends \mon\util\Validate
      * @var array
      */
     public $message = [
-        'idx'       => 'ID格式错误',
+        'id'       => 'ID格式错误',
         'uid'       => '用户ID格式错误',
         'gid'       => '组别ID格式错误',
         'new_gid'   => '新组别ID格式错误',
@@ -49,6 +50,7 @@ class Validate extends \mon\util\Validate
         'remark'    => '附加信息格式错误',
         'offset'    => 'offset格式错误',
         'limit'     => 'limit格式错误',
+        'is_rule'   => '请选择是否为规则',
         'status'    => '状态参数错误'
     ];
 
@@ -67,11 +69,11 @@ class Validate extends \mon\util\Validate
         // 添加角色组别
         'group_add'     => ['pid', 'title', 'rules'],
         // 修改角色组别信息
-        'group_modify'  => ['idx', 'pid', 'title', 'rules', 'status'],
+        'group_modify'  => ['pid', 'title', 'rules', 'status', 'id'],
         // 增加规则
-        'rule_add'      => ['title', 'pid', 'rule', 'remark'],
+        'rule_add'      => ['title', 'pid', 'rule', 'remark', 'is_rule'],
         // 修改规则
-        'rule_modify'   => ['title', 'pid', 'rule', 'remark', 'idx', 'status'],
+        'rule_modify'   => ['title', 'pid', 'rule', 'remark', 'is_rule', 'status', 'id'],
     ];
 
     /**
