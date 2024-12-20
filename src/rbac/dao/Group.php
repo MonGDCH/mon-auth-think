@@ -124,14 +124,14 @@ class Group extends Dao
             return false;
         }
         // 获取数据
-        $info = $this->where(['id' => $option['idx']])->get();
+        $info = $this->where(['id' => $option['id']])->get();
         if (!$info) {
             $this->error = '角色组不存在';
             return false;
         }
         $modifyRule = false;
         $status = $option['status'];
-        $idx = $option['idx'];
+        $idx = $option['id'];
         $pid = $option['pid'];
         $rules = array_unique($option['rules']);
         sort($rules);
