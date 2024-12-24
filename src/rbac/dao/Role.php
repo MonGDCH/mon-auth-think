@@ -10,12 +10,12 @@ use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacException;
 
 /**
- * 角色组模型
+ * 角色模型
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.1   优化代码
  */
-class Group extends Dao
+class Role extends Dao
 {
     /**
      * Auth实例
@@ -49,28 +49,7 @@ class Group extends Dao
             throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
         }
         $this->auth = $auth;
-        $this->table = $this->auth->getConfig('auth_group');
-    }
-
-    /**
-     * 获取组别信息
-     *
-     * @param array $option 分页参数 
-     * @param array $where  查询条件
-     * @return array
-     */
-    public function getList(array $option, array $where = []): array
-    {
-        $page = isset($option['page']) ? intval($option['page']) : 1;
-        $limit = isset($option['limit']) ? intval($option['limit']) : 10;
-
-        $list = $this->where($where)->page($page, $limit)->all();
-        $count = $this->where($where)->count('id');
-
-        return [
-            'list' => $list,
-            'count' => $count
-        ];
+        $this->table = $this->auth->getConfig('auth_role');
     }
 
     /**
@@ -82,7 +61,7 @@ class Group extends Dao
      */
     public function add(array $option, array $ext = []): int
     {
-        $check = $this->validate()->scope('group_add')->data($option)->check();
+        $check = $this->validate()->scope('role_add')->data($option)->check();
         if (!$check) {
             $this->error = $this->validate()->getError();
             return 0;
@@ -100,13 +79,13 @@ class Group extends Dao
             'pid'   => $option['pid'],
             'rules' => implode(',', $rules),
         ]);
-        $group_id = $this->save($info, false, true);
-        if (!$group_id) {
+        $id = $this->save($info, false, true);
+        if (!$id) {
             $this->error = '创建权限组失败';
             return 0;
         }
 
-        return $group_id;
+        return intval($id);
     }
 
     /**
@@ -118,7 +97,7 @@ class Group extends Dao
      */
     public function modify(array $option, array $ext = []): bool
     {
-        $check = $this->validate()->scope('group_modify')->data($option)->check();
+        $check = $this->validate()->scope('role_modify')->data($option)->check();
         if (!$check) {
             $this->error = $this->validate()->getError();
             return false;
@@ -151,11 +130,11 @@ class Group extends Dao
         $this->startTrans();
         try {
             // 获取所有组别信息
-            $groups = $this->all();
+            $roles = $this->field(['id', 'pid', 'title', 'rules', 'status'])->all();
             // 判断是否修改规则，修改了规则，更新移除后代多余的规则
             if ($modifyRule) {
                 // 比对每一个后代，有规则冲突则更新
-                $childrens = Tree::instance()->data($groups)->getChildren($idx);
+                $childrens = Tree::instance()->data($roles)->getChildren($idx);
                 foreach ($childrens as $child) {
                     // 比对子级与父级的权限
                     if (!empty($this->diffRule($rules, $child['rules']))) {
@@ -175,7 +154,7 @@ class Group extends Dao
                 // 修改为有效
                 if ($status == $this->auth->getConfig('effective_status')) {
                     // 有效则判断当前节点所有祖先节点是否都为有效状态。
-                    $parents = Tree::instance()->data($groups)->getParents($idx);
+                    $parents = Tree::instance()->data($roles)->getParents($idx);
                     foreach ($parents as $parent) {
                         if ($parent['status'] == $this->auth->getConfig('invalid_status')) {
                             $this->rollback();
@@ -213,7 +192,7 @@ class Group extends Dao
                     }
 
                     // 无效，同步将所有后代节点下线
-                    $childrens = Tree::instance()->data($groups)->getChildrenIds($idx);
+                    $childrens = Tree::instance()->data($roles)->getChildrenIds($idx);
                     // 下线后代
                     if ($childrens) {
                         $offline = $this->where('id', 'IN', $childrens)->update(['status' => $option['status'], 'update_time' => time()]);
@@ -266,7 +245,7 @@ class Group extends Dao
     {
         // 存在父级组别，子级组别权限规则必须包含在父级权限规则中
         if ($pid > 0) {
-            $parentInfo = $this->where(['id' => $pid])->get();
+            $parentInfo = $this->where('id', $pid)->get();
             if (!$parentInfo) {
                 $this->error = '父级权限组别不存在';
                 return false;

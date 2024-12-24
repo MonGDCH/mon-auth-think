@@ -6,7 +6,7 @@ namespace mon\auth\Command;
 
 use mon\util\Sql;
 use mon\env\Config;
-use think\facade\Db;
+use mon\thinkORM\Db;
 use mon\console\Input;
 use mon\console\Output;
 use mon\console\Command;
@@ -53,8 +53,8 @@ class DbRbacCommand extends Command
         $file = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'rbac.sql';
         $sqls = Sql::instance()->parseFile($file);
         // 表名
-        $auth_group = Config::instance()->get('auth.rbac.auth_group', 'auth_group');
-        $auth_access = Config::instance()->get('auth.rbac.auth_group_access', 'auth_access');
+        $auth_role = Config::instance()->get('auth.rbac.auth_role', 'auth_role');
+        $auth_access = Config::instance()->get('auth.rbac.auth_role_access', 'auth_access');
         $auth_rule = Config::instance()->get('auth.rbac.auth_rule', 'auth_rule');
         // 建表
         Db::setConfig(Config::instance()->get('database', []));
@@ -65,8 +65,8 @@ class DbRbacCommand extends Command
                     $table = $auth_access;
                     break;
                 case 1:
-                    $sql = sprintf($sql, $auth_group);
-                    $table = $auth_group;
+                    $sql = sprintf($sql, $auth_role);
+                    $table = $auth_role;
                     break;
                 case 2:
                     $sql = sprintf($sql, $auth_rule);

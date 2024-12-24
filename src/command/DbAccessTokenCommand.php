@@ -6,7 +6,7 @@ namespace mon\auth\Command;
 
 use mon\util\Sql;
 use mon\env\Config;
-use think\facade\Db;
+use mon\thinkORM\Db;
 use mon\console\Input;
 use mon\console\Output;
 use mon\console\Command;

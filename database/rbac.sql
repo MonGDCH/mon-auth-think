@@ -1,12 +1,12 @@
 
 CREATE TABLE IF NOT EXISTS `%s` (
   `uid` int(10) unsigned NOT NULL COMMENT '用户ID',
-  `group_id` int(10) unsigned NOT NULL COMMENT '组别ID',
+  `gid` int(10) unsigned NOT NULL COMMENT '角色ID',
   `update_time` int(10) unsigned NOT NULL COMMENT '创建时间',
   `create_time` int(10) unsigned NOT NULL COMMENT '更新时间',
-  UNIQUE KEY `uid_group_id` (`uid`,`group_id`),
+  UNIQUE KEY `uid_gid` (`uid`,`gid`),
   KEY `uid` (`uid`),
-  KEY `group_id` (`group_id`)
+  KEY `gid` (`gid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组别用户关联表';
 
 
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `%s` (
   `update_time` int(10) unsigned NOT NULL COMMENT '更新时间',
   `create_time` int(10) unsigned NOT NULL COMMENT '创建时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限规则组表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
 
 
 CREATE TABLE IF NOT EXISTS `%s` (

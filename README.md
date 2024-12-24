@@ -86,9 +86,9 @@ $config = [
     // 权限开关
     'auth_on'           => true,
     // 用户组数据表名               
-    'auth_group'        => 'auth_group',
+    'auth_role'         => 'auth_role',
     // 用户-用户组关系表     
-    'auth_group_access' => 'auth_access',
+    'auth_role_access'  => 'auth_access',
     // 权限规则表    
     'auth_rule'         => 'auth_rule',
     // 超级管理员权限标志       

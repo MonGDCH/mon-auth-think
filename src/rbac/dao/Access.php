@@ -10,7 +10,7 @@ use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacException;
 
 /**
- * 组别用户关联模型
+ * 用户-角色关联模型
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.1   优化代码
@@ -49,29 +49,30 @@ class Access extends Dao
             throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
         }
         $this->auth = $auth;
-        $this->table = $this->auth->getConfig('auth_group_access');
+        $this->table = $this->auth->getConfig('auth_role_access');
     }
 
     /**
-     * 获取用户所在组别
+     * 获取用户所在角色
      *
      * @param string|integer $uid  用户ID
      * @return array
      */
-    public function getUserGroup($uid): array
+    public function getUserRole($uid): array
     {
-        return $this->alias('a')->join($this->auth->getConfig('auth_group') . ' b', 'a.group_id=b.id')
-            ->field(['a.uid', 'a.group_id', 'b.id', 'b.pid', 'b.title', 'b.rules'])
+        return $this->alias('a')->join($this->auth->getConfig('auth_role') . ' b', 'a.gid=b.id')
+            ->field(['a.uid', 'a.gid', 'b.id', 'b.pid', 'b.title', 'b.rules'])
             ->where('a.uid', $uid)->where('b.status', $this->auth->getConfig('effective_status'))->all();
     }
 
     /**
-     * 创建组别用户关联
+     * 创建角色用户关联
      *
      * @param array $option 请求参数
+     * @param array $ext    扩展写入字段
      * @return boolean
      */
-    public function bind(array $option): bool
+    public function bind(array $option, array $ext = []): bool
     {
         $check = $this->validate()->scope('access_bind')->data($option)->check();
         if (!$check) {
@@ -79,14 +80,15 @@ class Access extends Dao
             return false;
         }
 
-        if ($this->where('group_id', $option['gid'])->where('uid', $option['uid'])->get()) {
-            $this->error = '用户已关联，请勿重复关联';
+        if ($this->where('gid', $option['gid'])->where('uid', $option['uid'])->get()) {
+            $this->error = '用户已关联角色，请勿重复关联';
             return false;
         }
 
-        $save = $this->save(['uid' => $option['uid'], 'group_id' => $option['gid']], true);
+        $info = array_merge($ext, ['uid' => $option['uid'], 'gid' => $option['gid']]);
+        $save = $this->save($info, true);
         if (!$save) {
-            $this->error = '关联用户组别失败';
+            $this->error = '关联用户角色失败';
             return false;
         }
 
@@ -108,13 +110,13 @@ class Access extends Dao
             return false;
         }
 
-        $info = $this->where('group_id', $option['gid'])->where('uid', $option['uid'])->get();
+        $info = $this->where('gid', $option['gid'])->where('uid', $option['uid'])->get();
         if (!$info) {
-            $this->error = '用户未绑定组别';
+            $this->error = '用户未绑定角色';
             return false;
         }
 
-        $del = $this->where('group_id', $option['gid'])->where('uid', $option['uid'])->limit(1)->delete();
+        $del = $this->where('gid', $option['gid'])->where('uid', $option['uid'])->limit(1)->delete();
         if (!$del) {
             $this->error = '解除角色组绑定失败';
             return false;
@@ -124,12 +126,13 @@ class Access extends Dao
     }
 
     /**
-     * 修改组别用户关联
+     * 修改角色用户关联
      *
      * @param array $option 请求参数
+     * @param array $ext    扩展写入字段
      * @return boolean
      */
-    public function modify(array $option): bool
+    public function modify(array $option, array $ext = []): bool
     {
         $check = $this->validate()->scope('access_modify')->data($option)->check();
         if (!$check) {
@@ -137,24 +140,25 @@ class Access extends Dao
             return false;
         }
         if ($option['new_gid'] == $option['gid']) {
-            $this->error = '新组别与旧组别相同';
+            $this->error = '新角色与旧角色相同';
             return false;
         }
 
-        $info = $this->where('uid', $option['uid'])->where('group_id', $option['gid'])->get();
+        $info = $this->where('uid', $option['uid'])->where('gid', $option['gid'])->get();
         if (!$info) {
-            $this->error = '用户未分配对应旧关联组';
+            $this->error = '用户未绑定原角色';
             return false;
         }
-        $exists = $this->where('uid', $option['uid'])->where('group_id', $option['new_gid'])->get();
+        $exists = $this->where('uid', $option['uid'])->where('gid', $option['new_gid'])->get();
         if ($exists) {
-            $this->error = '用户已绑定新组别，请勿重复绑定';
+            $this->error = '用户已绑定新角色，请勿重复绑定';
             return false;
         }
 
-        $save = $this->where(['uid' => $option['uid'], 'group_id' => $option['gid']])->save(['group_id' => $option['new_gid']]);
+        $info = array_merge($ext, ['uid' => $option['uid'], 'gid' => $option['new_gid']]);
+        $save = $this->where(['uid' => $option['uid'], 'gid' => $option['gid']])->save($info);
         if (!$save) {
-            $this->error = '更新失败';
+            $this->error = '修改用户角色失败';
             return false;
         }
 

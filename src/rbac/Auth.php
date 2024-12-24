@@ -18,7 +18,7 @@ use mon\auth\exception\RbacException;
  * 2，可以同时对多条规则进行认证，并设置多条规则的关系（ true 或者 false ）
  *      $auth = Auth::instance($config);  $auth->check([规则1, 规则2], '用户id', false)
  *      第三个参数为 false 时表示，用户需要同时具有规则1和规则2的权限。 当第三个参数为 true 时，表示用户值需要具备其中一个条件即可。默认为 true
- * 3，一个用户可以属于多个用户组(auth_group_access 定义了用户所属用户组)。我们需要设置每个用户组拥有哪些规则(auth_group 定义了用户组权限)
+ * 3，一个用户可以属于多个用户组(auth_role_access 定义了用户所属用户组)。我们需要设置每个用户组拥有哪些规则(auth_role 定义了用户组权限)
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
@@ -47,10 +47,10 @@ class Auth
      * @var array
      */
     protected $config = [
-        // 用户组数据表名               
-        'auth_group'        => 'auth_group',
-        // 用户-用户组关系表     
-        'auth_group_access' => 'auth_access',
+        // 角色表               
+        'auth_role'         => 'auth_role',
+        // 用户-角色关系表     
+        'auth_role_access'  => 'auth_access',
         // 权限规则表    
         'auth_rule'         => 'auth_rule',
         // 超级管理员权限标志       
@@ -59,6 +59,8 @@ class Auth
         'effective_status'  => 1,
         // 无效的状态值
         'invalid_status'    => 0,
+        // 是否触发事件
+        'trigger_event'     => false,
     ];
 
     /**
@@ -134,7 +136,7 @@ class Auth
         // 获取用户需要验证的所有有效规则列表
         $authList = $this->getAuthList($uid);
         if (in_array($this->config['admin_mark'], (array) $authList)) {
-            // 触发rack权限验证事件
+            // 触发rbac权限验证事件
             $this->triggerEvent($uid, $rule, 'admin', $authList, $relation);
             // 具备所有权限
             return true;
@@ -158,17 +160,19 @@ class Auth
         }
         // 判断验证规则
         if ($relation == true && !empty($list)) {
-            // 触发rack权限验证事件
+            // 触发rbac权限验证事件
             $this->triggerEvent($uid, $rule, 'check', $list, $relation);
             return true;
         }
         $diff = array_diff($rule, $list);
         if ($relation == false && empty($diff)) {
-            // 触发rack权限验证事件
+            // 触发rbac权限验证事件
             $this->triggerEvent($uid, $rule, 'diff', $diff, $relation);
             return true;
         }
 
+        // 触发rbac权限验证不通过事件
+        $this->triggerEvent($uid, $rule, 'faild', $diff, $relation);
         return false;
     }
 
@@ -184,8 +188,8 @@ class Auth
         $ids = [];
         /** @var \mon\auth\rbac\dao\Access $dao 关联表Dao */
         $dao = $this->dao('access');
-        $groups = $dao->getUserGroup($uid);
-        foreach ($groups as $v) {
+        $roles = $dao->getUserRole($uid);
+        foreach ($roles as $v) {
             if (!$v || !trim($v['rules'], ',')) {
                 continue;
             }
@@ -259,7 +263,7 @@ class Auth
      */
     public function dao(string $name, bool $cache = true): Dao
     {
-        if (!in_array(strtolower($name), ['access', 'group', 'rule'])) {
+        if (!in_array(strtolower($name), ['access', 'role', 'rule'])) {
             throw new RbacException('不存在对应RBAC权限模型', RbacException::RBAC_MODEL_NOT_FOUND);
         }
 
@@ -283,14 +287,16 @@ class Auth
      * @param boolean $relation 是否需要满足全部规则通过才通过
      * @return void
      */
-    protected function triggerEvent($uid, $rule, string $type, array $auth,  bool $relation)
+    protected function triggerEvent($uid, $rule, string $type, array $auth, bool $relation)
     {
-        Event::instance()->trigger('rbac_check', [
-            'type' => $type,
-            'auth' => $auth,
-            'uid'  => $uid,
-            'rule' => $rule,
-            'relation' => $relation
-        ]);
+        if ($this->config['trigger_event']) {
+            Event::instance()->trigger('rbac_check', [
+                'type' => $type,
+                'auth' => $auth,
+                'uid'  => $uid,
+                'rule' => $rule,
+                'relation' => $relation
+            ]);
+        }
     }
 }

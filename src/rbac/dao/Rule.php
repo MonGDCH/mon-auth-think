@@ -53,27 +53,6 @@ class Rule extends Dao
     }
 
     /**
-     * 获取所有规则信息
-     *
-     * @param array $option 分页参数
-     * @param array $where  查询参数
-     * @return array
-     */
-    public function getList(array $option, array $where = []): array
-    {
-        $page = isset($option['page']) ? intval($option['page']) : 1;
-        $limit = isset($option['limit']) ? intval($option['limit']) : 10;
-
-        $list = $this->where($where)->page($page, $limit)->all();
-        $count = $this->where($where)->count('id');
-
-        return [
-            'list' => $list,
-            'count' => $count
-        ];
-    }
-
-    /**
      * 新增规则
      *
      * @param array $option 规则参数
@@ -128,10 +107,10 @@ class Rule extends Dao
 
         if ($baseInfo['status'] != $status) {
             // 修改了状态
-            $rules = $this->all();
+            $rules = $this->field(['id', 'pid', 'status', 'rule'])->all();
             if ($status == $this->auth->getConfig('effective_status')) {
-                // 有效则判断当前节点所有祖先节点是否都为有效状态。
-                $parents = Tree::instance()->data($rules)->getParents($idx);
+                // 有效则判断当前修改父级节点及所有祖先节点是否都为有效状态。
+                $parents = Tree::instance()->data($rules)->getParents($option['pid'], true);
                 foreach ($parents as $v) {
                     if ($v['status'] == $this->auth->getConfig('invalid_status')) {
                         $this->error = '操作失败(祖先节点存在无效节点)';

@@ -8,10 +8,10 @@
 */
 
 return [
-    // 用户组数据表名               
-    'auth_group'        => 'auth_group',
-    // 用户-用户组关系表     
-    'auth_group_access' => 'auth_access',
+    // 角色表             
+    'auth_role'         => 'auth_role',
+    // 用户-角色关系表     
+    'auth_role_access'  => 'auth_access',
     // 权限规则表    
     'auth_rule'         => 'auth_rule',
     // 超级管理员权限标志       
@@ -20,6 +20,8 @@ return [
     'effective_status'  => 1,
     // 无效的状态值
     'invalid_status'    => 0,
+    // 是否触发事件
+    'trigger_event'     => false,
     // 中间件配置
     'middleware'        => [
         // 中间件回调处理

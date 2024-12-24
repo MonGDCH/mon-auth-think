@@ -18,17 +18,15 @@ class Validate extends \mon\util\Validate
      * @var array
      */
     public $rule = [
-        'id'       => ['required', 'id'],
+        'id'        => ['required', 'id'],
         'uid'       => ['required', 'id'],
         'gid'       => ['required', 'id'],
         'new_gid'   => ['required', 'id'],
         'pid'       => ['required', 'int', 'min:0'],
-        'rules'     => ['arr', 'rules'],
-        'rule'      => ['required', 'str'],
-        'title'     => ['required', 'str'],
-        'remark'    => ['str'],
-        'offset'    => ['int', 'min:0'],
-        'limit'     => ['id'],
+        'rules'     => ['isset', 'arr', 'rules'],
+        'rule'      => ['required', 'str', 'maxLength:250'],
+        'title'     => ['required', 'str', 'maxLength:50'],
+        'remark'    => ['isset', 'str', 'maxLength:250'],
         'status'    => ['required', 'int', 'min:0'],
     ];
 
@@ -38,18 +36,32 @@ class Validate extends \mon\util\Validate
      * @var array
      */
     public $message = [
-        'id'       => 'ID格式错误',
-        'uid'       => '用户ID格式错误',
-        'gid'       => '组别ID格式错误',
-        'new_gid'   => '新组别ID格式错误',
-        'pid'       => '上级ID格式错误',
-        'rules'     => '角色组别规则格式错误',
-        'rule'      => '规则标志格式错误',
-        'title'     => '规则名称格式错误',
-        'remark'    => '附加信息格式错误',
-        'offset'    => 'offset格式错误',
-        'limit'     => 'limit格式错误',
-        'status'    => '状态参数错误'
+        'id'        => 'ID参数错误',
+        'uid'       => '用户ID参数错误',
+        'gid'       => '角色ID参数错误',
+        'new_gid'   => '新角色ID参数错误',
+        'pid'       => '上级ID参数错误',
+        'status'    => '状态参数错误',
+        'rules'     => [
+            'isset'     => '角色规则列表参数错误',
+            'arr'       => '角色规则列表必须为数组',
+            'rules'     => '角色规则列表格式错误'
+        ],
+        'rule'      => [
+            'required'  => '规则参数错误',
+            'str'       => '规则格式必须为字符串',
+            'maxLength' => '规则长度不能超过250个字符'
+        ],
+        'title'     => [
+            'required'  => '名称参数错误',
+            'str'       => '名称格式必须为字符串',
+            'maxLength' => '名称长度不能超过50个字符'
+        ],
+        'remark'    => [
+            'isset'     => '备注描述参数错误',
+            'str'       => '备注描述格式必须为字符串',
+            'maxLength' => '备注描述长度不能超过50个字符'
+        ]
     ];
 
     /**
@@ -65,9 +77,9 @@ class Validate extends \mon\util\Validate
         // 修改组别用户关联
         'access_modify' => ['uid', 'gid', 'new_gid'],
         // 添加角色组别
-        'group_add'     => ['pid', 'title', 'rules'],
+        'role_add'      => ['pid', 'title', 'rules'],
         // 修改角色组别信息
-        'group_modify'  => ['pid', 'title', 'rules', 'status', 'id'],
+        'role_modify'   => ['pid', 'title', 'rules', 'status', 'id'],
         // 增加规则
         'rule_add'      => ['title', 'pid', 'rule', 'remark'],
         // 修改规则
