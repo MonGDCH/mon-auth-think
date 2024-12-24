@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS `%s` (
   `rule` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '权限规则',
   `remark` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '描述信息',
   `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1:有效,0:无效',
-  `is_rule` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '是否规则:1是0否',
   `update_time` int(10) unsigned NOT NULL COMMENT '更新时间',
   `create_time` int(10) unsigned NOT NULL COMMENT '创建时间',
   PRIMARY KEY (`id`)

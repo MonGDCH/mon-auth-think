@@ -29,7 +29,6 @@ class Validate extends \mon\util\Validate
         'remark'    => ['str'],
         'offset'    => ['int', 'min:0'],
         'limit'     => ['id'],
-        'is_rule'   => ['required', 'in:0,1'],
         'status'    => ['required', 'int', 'min:0'],
     ];
 
@@ -50,7 +49,6 @@ class Validate extends \mon\util\Validate
         'remark'    => '附加信息格式错误',
         'offset'    => 'offset格式错误',
         'limit'     => 'limit格式错误',
-        'is_rule'   => '请选择是否为规则',
         'status'    => '状态参数错误'
     ];
 
@@ -71,9 +69,9 @@ class Validate extends \mon\util\Validate
         // 修改角色组别信息
         'group_modify'  => ['pid', 'title', 'rules', 'status', 'id'],
         // 增加规则
-        'rule_add'      => ['title', 'pid', 'rule', 'remark', 'is_rule'],
+        'rule_add'      => ['title', 'pid', 'rule', 'remark'],
         // 修改规则
-        'rule_modify'   => ['title', 'pid', 'rule', 'remark', 'is_rule', 'status', 'id'],
+        'rule_modify'   => ['title', 'pid', 'rule', 'remark', 'status', 'id'],
     ];
 
     /**

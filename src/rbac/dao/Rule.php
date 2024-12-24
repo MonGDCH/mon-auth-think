@@ -92,7 +92,6 @@ class Rule extends Dao
             'pid'       => $option['pid'],
             'title'     => $option['title'],
             'rule'      => $option['rule'],
-            'is_rule'   => $option['is_rule'],
             'remark'    => $option['remark'] ?? '',
         ]);
         $rule_id = $this->save($info, false, true);
@@ -145,7 +144,6 @@ class Rule extends Dao
                     'pid'       => $option['pid'],
                     'title'     => $option['title'],
                     'rule'      => $option['rule'],
-                    'is_rule'   => $option['is_rule'],
                     'remark'    => $option['remark'] ?? '',
                     'status'    => $option['status'],
                 ]);
@@ -167,7 +165,6 @@ class Rule extends Dao
                         'pid'       => $option['pid'],
                         'title'     => $option['title'],
                         'rule'      => $option['rule'],
-                        'is_rule'   => $option['is_rule'],
                         'remark'    => $option['remark'] ?? '',
                         'status'    => $option['status'],
                     ]);
@@ -204,7 +201,6 @@ class Rule extends Dao
                 'pid'       => $option['pid'],
                 'title'     => $option['title'],
                 'rule'      => $option['rule'],
-                'is_rule'   => $option['is_rule'],
                 'remark'    => $option['remark'] ?? '',
             ]);
             $save = $this->where(['id' => $idx])->save($info);

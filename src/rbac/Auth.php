@@ -242,7 +242,7 @@ class Auth
         // 构造查询条件
         /** @var \mon\auth\rbac\dao\Rule $dao 规则表Dao */
         $dao = $this->dao('rule');
-        $query = $dao->field(['id', 'pid', 'rule', 'title'])->where('is_rule', 1)->where('status', $this->config['effective_status']);
+        $query = $dao->field(['id', 'pid', 'rule', 'title'])->where('status', $this->config['effective_status']);
         if (!in_array($this->config['admin_mark'], $ids)) {
             $query->where('id', 'IN', $ids);
         }
