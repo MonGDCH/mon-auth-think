@@ -23,7 +23,7 @@ class Validate extends \mon\util\Validate
         'gid'       => ['required', 'id'],
         'new_gid'   => ['required', 'id'],
         'pid'       => ['required', 'int', 'min:0'],
-        'rules'     => ['isset', 'arr', 'rules'],
+        'rules'     => ['isset', 'array', 'rules'],
         'rule'      => ['required', 'str', 'maxLength:250'],
         'title'     => ['required', 'str', 'maxLength:50'],
         'remark'    => ['isset', 'str', 'maxLength:250'],
@@ -44,7 +44,7 @@ class Validate extends \mon\util\Validate
         'status'    => '状态参数错误',
         'rules'     => [
             'isset'     => '角色规则列表参数错误',
-            'arr'       => '角色规则列表必须为数组',
+            'array'     => '角色规则列表必须为数组',
             'rules'     => '角色规则列表格式错误'
         ],
         'rule'      => [
