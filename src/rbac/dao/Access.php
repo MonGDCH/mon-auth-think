@@ -39,6 +39,13 @@ class Access extends Dao
     protected $autoWriteTimestamp = true;
 
     /**
+     * 自动写入时间戳格式，空则直接写入时间戳
+     *
+     * @var string
+     */
+    protected $autoTimeFormat = '';
+
+    /**
      * 构造方法
      *
      * @param Auth $auth Auth实例
@@ -50,6 +57,7 @@ class Access extends Dao
         }
         $this->auth = $auth;
         $this->table = $this->auth->getConfig('auth_role_access');
+        $this->autoTimeFormat = $this->auth->getConfig('time_format');
     }
 
     /**

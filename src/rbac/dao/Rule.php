@@ -39,6 +39,13 @@ class Rule extends Dao
     protected $autoWriteTimestamp = true;
 
     /**
+     * 自动写入时间戳格式，空则直接写入时间戳
+     *
+     * @var string
+     */
+    protected $autoTimeFormat = '';
+
+    /**
      * 构造方法
      *
      * @param Auth $auth Auth实例
@@ -50,6 +57,7 @@ class Rule extends Dao
         }
         $this->auth = $auth;
         $this->table = $this->auth->getConfig('auth_rule');
+        $this->autoTimeFormat = $this->auth->getConfig('time_format');
     }
 
     /**
@@ -156,7 +164,8 @@ class Rule extends Dao
 
                     // 下线后代
                     if (!empty($childrens)) {
-                        $offline = $this->where('id', 'IN', $childrens)->update(['status' => $option['status'], 'update_time' => time()]);
+                        $update_time = $this->autoTimeFormat ? date($this->autoTimeFormat, time()) : time();
+                        $offline = $this->where('id', 'IN', $childrens)->update(['status' => $option['status'], 'update_time' => $update_time]);
                         if (!$offline) {
                             $this->rollback();
                             $this->error = '修改后代权限规则失败';
