@@ -78,26 +78,24 @@ class Access extends Dao
      *
      * @param array $option 请求参数
      * @param array $ext    扩展写入字段
+     * @throws RbacException
      * @return boolean
      */
     public function bind(array $option, array $ext = []): bool
     {
         $check = $this->validate()->scope('access_bind')->data($option)->check();
         if (!$check) {
-            $this->error = $this->validate()->getError();
-            return false;
+            throw new RbacException('关联角色用户参数错误：' . $this->validate()->getError());
         }
 
         if ($this->where('gid', $option['gid'])->where('uid', $option['uid'])->get()) {
-            $this->error = '用户已关联角色，请勿重复关联';
-            return false;
+            throw new RbacException('关联角色用户失败： 用户已关联角色，请勿重复关联');
         }
 
         $info = array_merge($ext, ['uid' => $option['uid'], 'gid' => $option['gid']]);
         $save = $this->save($info, true);
         if (!$save) {
-            $this->error = '关联用户角色失败';
-            return false;
+            throw new RbacException('关联角色用户失败： 关联用户角色失败');
         }
 
         return true;
@@ -108,26 +106,24 @@ class Access extends Dao
      *
      * @see 此操作为删除操作，请谨慎使用
      * @param array $option 请求参数
+     * @throws RbacException
      * @return boolean
      */
     public function unbind(array $option): bool
     {
         $check = $this->validate()->scope('access_unbind')->data($option)->check();
         if (!$check) {
-            $this->error = $this->validate()->getError();
-            return false;
+            throw new RbacException('解除角色用户关联参数错误：' . $this->validate()->getError());
         }
 
         $info = $this->where('gid', $option['gid'])->where('uid', $option['uid'])->get();
         if (!$info) {
-            $this->error = '用户未绑定角色';
-            return false;
+            throw new RbacException('解除角色用户关联失败： 用户未绑定角色');
         }
 
         $del = $this->where('gid', $option['gid'])->where('uid', $option['uid'])->limit(1)->delete();
         if (!$del) {
-            $this->error = '解除角色组绑定失败';
-            return false;
+            throw new RbacException('解除角色用户关联失败： 解除角色组绑定失败');
         }
 
         return true;
@@ -138,36 +134,32 @@ class Access extends Dao
      *
      * @param array $option 请求参数
      * @param array $ext    扩展写入字段
+     * @throws RbacException
      * @return boolean
      */
     public function modify(array $option, array $ext = []): bool
     {
         $check = $this->validate()->scope('access_modify')->data($option)->check();
         if (!$check) {
-            $this->error = $this->validate()->getError();
-            return false;
+            throw new RbacException('修改角色用户关联参数错误：' . $this->validate()->getError());
         }
         if ($option['new_gid'] == $option['gid']) {
-            $this->error = '新角色与旧角色相同';
-            return false;
+            throw new RbacException('修改角色用户关联参数错误： 新角色与旧角色相同');
         }
 
         $info = $this->where('uid', $option['uid'])->where('gid', $option['gid'])->get();
         if (!$info) {
-            $this->error = '用户未绑定原角色';
-            return false;
+            throw new RbacException('修改角色用户关联参数错误： 用户未绑定原角色');
         }
         $exists = $this->where('uid', $option['uid'])->where('gid', $option['new_gid'])->get();
         if ($exists) {
-            $this->error = '用户已绑定新角色，请勿重复绑定';
-            return false;
+            throw new RbacException('修改角色用户关联参数错误： 用户已绑定新角色，请勿重复绑定');
         }
 
         $info = array_merge($ext, ['uid' => $option['uid'], 'gid' => $option['new_gid']]);
         $save = $this->where(['uid' => $option['uid'], 'gid' => $option['gid']])->save($info);
         if (!$save) {
-            $this->error = '修改用户角色失败';
-            return false;
+            throw new RbacException('修改角色用户关联失败： 修改用户角色失败');
         }
 
         return true;

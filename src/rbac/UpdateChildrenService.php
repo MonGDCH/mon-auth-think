@@ -224,7 +224,7 @@ class UpdateChildrenService
         // 按 ID 分组数据，每个 ID 只保留最后一条记录
         $uniqueData = [];
         foreach ($data as $item) {
-            $id = (int)$item['id'];
+            $id = (int)$item[$this->id];
             $uniqueData[$id] = $item;
         }
 
@@ -232,7 +232,7 @@ class UpdateChildrenService
         $updateFields = [];
         foreach ($uniqueData as $item) {
             foreach (array_keys($item) as $field) {
-                if ($field !== 'id') {
+                if ($field !== $this->id) {
                     $updateFields[$field] = true;
                 }
             }
@@ -242,7 +242,7 @@ class UpdateChildrenService
         $idList = array_keys($uniqueData);
         // 为每个需要更新的字段生成 CASE WHEN 语句
         foreach ($updateFields as $field => $_) {
-            $sql .= "`{$field}` = CASE `id` ";
+            $sql .= "`{$field}` = CASE `{$this->id}` ";
             foreach ($uniqueData as $id => $item) {
                 if (array_key_exists($field, $item)) {
                     // 有该字段的值，使用提供的值
@@ -271,7 +271,7 @@ class UpdateChildrenService
         // 移除最后的逗号
         $sql = rtrim($sql, ', ') . " ";
         // 添加 WHERE 子句
-        $sql .= "WHERE `id` IN (" . implode(',', $idList) . ")";
+        $sql .= "WHERE `{$this->id}` IN (" . implode(',', $idList) . ")";
         return $sql;
     }
 }

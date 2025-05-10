@@ -66,14 +66,14 @@ class Role extends Dao
      *
      * @param array $option 角色参数
      * @param array $ext    扩展写入字段
+     * @throws RbacException
      * @return integer
      */
     public function add(array $option, array $ext = []): int
     {
         $check = $this->validate()->scope('role_add')->data($option)->check();
         if (!$check) {
-            $this->error = $this->validate()->getError();
-            return 0;
+            throw new RbacException('新增角色参数错误：' . $this->validate()->getError());
         }
         $pid = $option['pid'];
         $pids = '0';
@@ -85,22 +85,19 @@ class Role extends Dao
         if ($pid > 0) {
             $parentInfo = $this->where('id', $pid)->get();
             if (!$parentInfo) {
-                $this->error = '父级权限角色不存在';
-                return false;
+                throw new RbacException('新增角色失败： 父级权限角色不存在');
             }
             // 比较状态
             $invalid_status = $this->auth->getConfig('invalid_status');
             if ($parentInfo['status'] == $invalid_status && $status != $invalid_status) {
-                $this->error = '父级权限角色为不可用状态下，子级角色必须为不可用状态';
-                return false;
+                throw new RbacException('新增角色失败： 父级权限角色为不可用状态下，子级角色必须为不可用状态');
             }
 
             // 比对规则，判断是否越权
             $parentRules = explode(',', $parentInfo['rules']);
             sort($parentRules);
             if ($this->isUltraVires($parentRules, $rules)) {
-                $this->error = '角色权限存在越权父级角色，请检查权限';
-                return false;
+                throw new RbacException('新增角色失败： 角色权限存在越权父级角色，请检查权限');
             }
 
             $pids = $parentInfo['pids'] . ',' . $pid;
@@ -116,8 +113,7 @@ class Role extends Dao
         ]);
         $id = $this->save($info, true, true);
         if (!$id) {
-            $this->error = '创建权限角色失败';
-            return 0;
+            throw new RbacException('新增角色失败： 创建权限角色失败');
         }
 
         return intval($id);
@@ -128,20 +124,19 @@ class Role extends Dao
      *
      * @param array $option 角色参数
      * @param array $ext    扩展写入字段
+     * @throws RbacException
      * @return boolean
      */
     public function modify(array $option, array $ext = []): bool
     {
         $check = $this->validate()->scope('role_modify')->data($option)->check();
         if (!$check) {
-            $this->error = $this->validate()->getError();
-            return false;
+            throw new RbacException('修改角色信息参数错误：' . $this->validate()->getError());
         }
         // 获取数据
         $info = $this->where(['id' => $option['id']])->get();
         if (!$info) {
-            $this->error = '角色不存在';
-            return false;
+            throw new RbacException('修改角色信息参数错误：角色不存在');
         }
         $status = $option['status'];
         $idx = $option['id'];
@@ -162,16 +157,14 @@ class Role extends Dao
 
         // 修改父级角色。存在父级角色，子级角色权限规则必须包含在父级权限规则中
         if ($pid > 0 && $updatePids) {
-            $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'status'])->get();
+            $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'rules', 'status'])->get();
             if (!$parentInfo) {
-                $this->error = '父级权限角色不存在';
-                return false;
+                throw new RbacException('修改角色信息失败： 父级权限角色不存在');
             }
             // 比较状态
             $invalid_status = $this->auth->getConfig('invalid_status');
             if ($parentInfo['status'] == $invalid_status && $status != $invalid_status) {
-                $this->error = '父级权限角色为不可用状态下，子级角色必须为不可用状态';
-                return false;
+                throw new RbacException('修改角色信息失败： 父级权限角色为不可用状态下，子级角色必须为不可用状态');
             }
 
             // 判断是否修改了规则或者修改了父级
@@ -179,8 +172,7 @@ class Role extends Dao
             sort($parentRules);
             // 比对规则
             if ($this->isUltraVires($parentRules, $rules)) {
-                $this->error = '角色权限存在越权父级角色，请检查权限';
-                return false;
+                throw new RbacException('修改角色信息失败： 角色权限存在越权父级角色，请检查权限');
             }
 
             $pids = $parentInfo['pids'] . ',' . $pid;
@@ -204,6 +196,7 @@ class Role extends Dao
                 $key = $child['id'];
                 // 更新状态
                 if ($updateChildrenInvalidStatus) {
+                    $updateChildrenData[$key]['id'] = $key;
                     $updateChildrenData[$key]['status'] = $status;
                 }
                 // 判断是否修改减少了权限规则，如果减少了权限规则，需要更新子级角色的权限规则
@@ -213,6 +206,7 @@ class Role extends Dao
                     // 判断是否存在修改
                     if (count($new_child_rules) != count($child_rules)) {
                         sort($new_child_rules);
+                        $updateChildrenData[$key]['id'] = $key;
                         $updateChildrenData[$key]['rules'] = implode(',', $new_child_rules);
                     }
                 }
@@ -232,15 +226,16 @@ class Role extends Dao
             ]);
             $save = $this->where(['id' => $idx])->save($modifyInfo);
             if (!$save) {
-                throw new RbacException('修改角色信息失败');
+                throw new RbacException('修改角色信息失败： 更新角色信息失败');
             }
 
             // 更新后代信息
             if (!empty($updateChildrenData)) {
+                sort($updateChildrenData);
                 $updateSql = $sdk->batchUpdateSql($updateChildrenData);
                 $save = $this->execute($updateSql);
                 if (!$save) {
-                    throw new RbacException("批量更新后代节点数据失败");
+                    throw new RbacException('修改角色信息失败： 批量更新后代节点数据失败');
                 }
             }
 
@@ -249,8 +244,7 @@ class Role extends Dao
         } catch (Throwable $e) {
             // 回滚事务
             $this->rollback();
-            $this->error = '修改角色信息异常, ' . $e->getMessage();
-            return false;
+            throw $e;
         }
     }
 
