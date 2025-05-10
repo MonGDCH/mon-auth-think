@@ -79,9 +79,7 @@ class Install
      *
      * @return void
      */
-    public static function uninstall()
-    {
-    }
+    public static function uninstall() {}
 
     /**
      * 安装

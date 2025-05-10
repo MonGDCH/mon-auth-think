@@ -77,11 +77,11 @@ class Validate extends \mon\util\Validate
         // 修改组别用户关联
         'access_modify' => ['uid', 'gid', 'new_gid'],
         // 添加角色组别
-        'role_add'      => ['pid', 'title', 'rules'],
+        'role_add'      => ['pid', 'title', 'rules', 'status'],
         // 修改角色组别信息
         'role_modify'   => ['pid', 'title', 'rules', 'status', 'id'],
         // 增加规则
-        'rule_add'      => ['title', 'pid', 'rule', 'remark'],
+        'rule_add'      => ['title', 'pid', 'rule', 'remark', 'status'],
         // 修改规则
         'rule_modify'   => ['title', 'pid', 'rule', 'remark', 'status', 'id'],
     ];

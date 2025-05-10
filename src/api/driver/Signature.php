@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace mon\auth\api\driver;
 
 use mon\util\Event;
-use mon\util\Common;
 use mon\util\Instance;
 use mon\auth\api\contract\Driver;
 use mon\auth\exception\APIException;
@@ -142,7 +141,7 @@ class Signature implements Driver
         // 创建时间，用于验证有效期
         $data[$this->getField('timestamp')] = time();
         // 随机字符串，用于保障随机性
-        $data[$this->getField('noncestr')] = Common::instance()->randString(32);
+        $data[$this->getField('noncestr')] = bin2hex(random_bytes(16));
         return $data;
     }
 

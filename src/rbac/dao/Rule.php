@@ -3,11 +3,11 @@
 namespace mon\auth\rbac\dao;
 
 use Throwable;
-use mon\util\Tree;
 use mon\thinkORM\Dao;
 use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacException;
+use mon\auth\rbac\UpdateChildrenService;
 
 /**
  * 权限规则表
@@ -75,19 +75,41 @@ class Rule extends Dao
             return 0;
         }
 
+        $status = $option['status'];
+        $pid = $option['pid'];
+        $pids = '0';
+        // 存在父级规则，判断父级状态及获取父级pids
+        if ($pid > 0) {
+            $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'status'])->get();
+            if (!$parentInfo) {
+                $this->error = '父级权限规则不存在';
+                return false;
+            }
+            // 比较状态
+            $invalid_status = $this->auth->getConfig('invalid_status');
+            if ($parentInfo['status'] == $invalid_status && $status != $invalid_status) {
+                $this->error = '父级权限规则为不可用状态下，子级规则必须为不可用状态';
+                return false;
+            }
+
+            $pids = $parentInfo['pids'] . ',' . $pid;
+        }
+
         $info = array_merge($ext, [
-            'pid'       => $option['pid'],
+            'pid'       => $pid,
+            'pids'      => $pids,
             'title'     => $option['title'],
             'rule'      => $option['rule'],
             'remark'    => $option['remark'] ?? '',
+            'status'    => $status
         ]);
-        $rule_id = $this->save($info, false, true);
+        $rule_id = $this->save($info, true, true);
         if (!$rule_id) {
-            $this->error = '新增规则失败';
+            $this->error = '新增权限规则失败';
             return 0;
         }
 
-        return $rule_id;
+        return intval($rule_id);
     }
 
     /**
@@ -106,98 +128,76 @@ class Rule extends Dao
         }
 
         $idx = $option['id'];
-        $status = $option['status'];
-        $baseInfo = $this->where(['id' => $idx])->get();
-        if (!$baseInfo) {
-            $this->error = '规则信息不存在';
+        $ruleInfo = $this->where(['id' => $idx])->field(['id', 'pid', 'pids', 'status'])->get();
+        if (!$ruleInfo) {
+            $this->error = '权限规则不存在';
             return false;
         }
 
-        if ($baseInfo['status'] != $status) {
-            // 修改了状态
-            $rules = $this->field(['id', 'pid', 'status', 'rule'])->all();
-            if ($status == $this->auth->getConfig('effective_status')) {
-                // 有效则判断当前修改父级节点及所有祖先节点是否都为有效状态。
-                $parents = Tree::instance()->data($rules)->getParents($option['pid'], true);
-                foreach ($parents as $v) {
-                    if ($v['status'] == $this->auth->getConfig('invalid_status')) {
-                        $this->error = '操作失败(祖先节点存在无效节点)';
-                        return false;
-                    }
-                }
-
-                // 更新
-                $info = array_merge($ext, [
-                    'pid'       => $option['pid'],
-                    'title'     => $option['title'],
-                    'rule'      => $option['rule'],
-                    'remark'    => $option['remark'] ?? '',
-                    'status'    => $option['status'],
-                ]);
-                $save = $this->where(['id' => $idx])->save($info);
-                if (!$save) {
-                    $this->error = '更新规则失败';
-                    return false;
-                }
-
-                return true;
-            } else if ($status == $this->auth->getConfig('invalid_status')) {
-                // 无效，同步将所有后代节点下线
-                $childrens = Tree::instance()->data($rules)->getChildrenIds($idx);
-                // 更新
-                $this->startTrans();
-                try {
-                    // 更新规则
-                    $info = array_merge($ext, [
-                        'pid'       => $option['pid'],
-                        'title'     => $option['title'],
-                        'rule'      => $option['rule'],
-                        'remark'    => $option['remark'] ?? '',
-                        'status'    => $option['status'],
-                    ]);
-                    $save = $this->where(['id' => $idx])->save($info);
-                    if (!$save) {
-                        $this->rollback();
-                        $this->error = '更新失败';
-                        return false;
-                    }
-
-                    // 下线后代
-                    if (!empty($childrens)) {
-                        $update_time = $this->autoTimeFormat ? date($this->autoTimeFormat, time()) : time();
-                        $offline = $this->where('id', 'IN', $childrens)->update(['status' => $option['status'], 'update_time' => $update_time]);
-                        if (!$offline) {
-                            $this->rollback();
-                            $this->error = '修改后代权限规则失败';
-                            return false;
-                        }
-                    }
-
-                    // 提交事务
-                    $this->commit();
-                    return true;
-                } catch (Throwable $e) {
-                    // 回滚事务
-                    $this->rollback();
-                    $this->error = '修改规则异常, ' . $e->getMessage();
-                    return false;
-                }
+        $status = $option['status'];
+        $pid = $option['pid'];
+        $pids = $pid > 0 ? $ruleInfo['pids'] : $pid;
+        // 是否需要更新后代状态为无效
+        $updateChildrenInvalidStatus = $ruleInfo['status'] != $status && $status == $this->auth->getConfig('invalid_status');
+        // 是否需要更新pids
+        $updatePids = $ruleInfo['pid'] != $pid;
+        // 存在父级规则，并且修改了父级规则，判断父级状态及获取父级pids
+        if ($pid > 0 && $updatePids) {
+            $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'status'])->get();
+            if (!$parentInfo) {
+                $this->error = '父级权限规则不存在';
+                return false;
             }
-        } else {
-            // 未修改状态，直接更新
-            $info = array_merge($ext, [
-                'pid'       => $option['pid'],
-                'title'     => $option['title'],
-                'rule'      => $option['rule'],
-                'remark'    => $option['remark'] ?? '',
-            ]);
-            $save = $this->where(['id' => $idx])->save($info);
-            if (!$save) {
-                $this->error = '更新失败';
+            // 比较状态
+            $invalid_status = $this->auth->getConfig('invalid_status');
+            if ($parentInfo['status'] == $invalid_status && $status != $invalid_status) {
+                $this->error = '父级权限规则为不可用状态下，子级规则必须为不可用状态';
                 return false;
             }
 
+            $pids = $parentInfo['pids'] . ',' . $pid;
+        }
+
+        // 更新数据
+        $this->startTrans();
+        try {
+            // 修改规则信息
+            $modifyInfo = array_merge($ext, [
+                'pid'       => $pid,
+                'pids'      => $pids,
+                'title'     => $option['title'],
+                'rule'      => $option['rule'],
+                'remark'    => $option['remark'] ?? '',
+                'status'    => $status
+            ]);
+            $save = $this->where(['id' => $idx])->save($modifyInfo);
+            if (!$save) {
+                throw new RbacException('修改规则信息失败');
+            }
+
+            // 更新后代信息
+            if ($updateChildrenInvalidStatus || $updatePids) {
+                // 更新pid，需要更新所有后代的pids
+                if ($updatePids) {
+                    $sdk = new UpdateChildrenService($this->table);
+                    // 判断是否需要更新状态为无效，更新后代pids信息
+                    $save = $updateChildrenInvalidStatus ? $sdk->updateChildrenPidsAndStatus($idx, $pids, $status) : $sdk->updateChildrenPids($idx, $pids);
+                } else {
+                    // 只更新后代状态，使用 FIND_IN_SET 直接修改后代状态
+                    $save = $this->where('FIND_IN_SET(' . $idx . ', pids)')->save(['status' => $status]);
+                }
+                if (!$save) {
+                    throw new RbacException("批量更新后代节点数据失败");
+                }
+            }
+
+            $this->commit();
             return true;
+        } catch (Throwable $e) {
+            // 回滚事务
+            $this->rollback();
+            $this->error = '修改规则信息异常, ' . $e->getMessage();
+            return false;
         }
     }
 }
