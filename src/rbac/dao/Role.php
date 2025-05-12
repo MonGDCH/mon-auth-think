@@ -141,7 +141,7 @@ class Role extends Dao
         $status = $option['status'];
         $idx = $option['id'];
         $pid = $option['pid'];
-        $pids = $pid > 0 ? $info['pids'] : $pid;
+        $pids = strval($pid > 0 ? $info['pids'] : $pid);
         $rules = array_unique($option['rules']);
         sort($rules);
 

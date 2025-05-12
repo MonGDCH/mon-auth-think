@@ -131,7 +131,7 @@ class Rule extends Dao
 
         $status = $option['status'];
         $pid = $option['pid'];
-        $pids = $pid > 0 ? $ruleInfo['pids'] : $pid;
+        $pids = strval($pid > 0 ? $ruleInfo['pids'] : $pid);
         // 是否需要更新后代状态为无效
         $updateChildrenInvalidStatus = $ruleInfo['status'] != $status && $status == $this->auth->getConfig('invalid_status');
         // 是否需要更新pids
