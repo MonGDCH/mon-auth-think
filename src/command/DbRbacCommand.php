@@ -51,7 +51,7 @@ class DbRbacCommand extends Command
     {
         // 读取sql文件
         $file = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'rbac.sql';
-        $sqls = Sql::instance()->parseFile($file);
+        $sqls = Sql::parseFile($file);
         // 表名
         $auth_role = Config::instance()->get('auth.rbac.auth_role', 'auth_role');
         $auth_access = Config::instance()->get('auth.rbac.auth_role_access', 'auth_access');

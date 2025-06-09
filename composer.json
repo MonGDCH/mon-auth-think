@@ -8,13 +8,13 @@
         "api-signature",
         "think-orm"
     ],
-    "homepage": "http://gdmon.com/",
+    "homepage": "https://github.com/MonGDCH",
     "license": "MIT",
     "authors": [
         {
             "name": "mon",
             "email": "985558837@qq.com",
-            "homepage": "http://www.gdmon.com/",
+            "homepage": "https://github.com/MonGDCH",
             "role": "Developer"
         }
     ],

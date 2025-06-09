@@ -51,7 +51,7 @@ class DbSignatureCommand extends Command
     {
         // 读取sql文件
         $file = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'api.sql';
-        $content = Sql::instance()->parseFile($file);
+        $content = Sql::parseFile($file);
         $content = $content[0];
         // 表名
         $table = Config::instance()->get('auth.signature.dao.construct.table', 'api_signs');

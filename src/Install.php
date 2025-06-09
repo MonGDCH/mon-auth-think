@@ -104,10 +104,10 @@ class Install
         foreach (static::$config_relation as $source => $dest) {
             $sourceFile = $source_path . $source;
             $destFile = ROOT_PATH . DIRECTORY_SEPARATOR . $dest;
-            $content = File::instance()->read($sourceFile);
+            $content = File::read($sourceFile);
             // 绑定key值
             $content = sprintf($content, static::getKey());
-            File::instance()->createFile($content, $destFile, false);
+            File::createFile($content, $destFile, false);
             echo 'Create File ' . $destFile . "\r\n";
         }
     }
@@ -119,6 +119,6 @@ class Install
      */
     protected static function getKey()
     {
-        return Common::instance()->randString(24, 5, '~!@#{}|$^&*()-_+%`');
+        return Common::randString(24, 5, '~!@#{}|$^&*()-_+%`');
     }
 }

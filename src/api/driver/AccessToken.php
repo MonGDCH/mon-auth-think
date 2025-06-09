@@ -118,11 +118,11 @@ class AccessToken implements Driver
         $data = array_merge($extend, [
             $this->getField('app_id') => $app_id,
             $this->getField('expire') => $expire_time,
-            $this->getField('ip') => Tool::instance()->ip()
+            $this->getField('ip') => Tool::ip()
         ]);
         $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
-        return Nbed64::instance()->stringEncrypt($json, $encrypt_salt);
+        return Nbed64::stringEncrypt($json, $encrypt_salt);
     }
 
     /**
@@ -138,7 +138,7 @@ class AccessToken implements Driver
         // 盐
         $encrypt_salt = $this->getEncryptSalt($secret);
         // 解析token数据
-        $json = Nbed64::instance()->stringDecrypt($token, $encrypt_salt);
+        $json = Nbed64::stringDecrypt($token, $encrypt_salt);
         // 修正解密后输出的JON格式错误：存在零宽的控制符(Control character error)
         $json = preg_replace('/[[:cntrl:]]/mu', '', $json);
         if (empty($json)) {
