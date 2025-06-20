@@ -79,6 +79,6 @@ class ArrayDao implements Dao
      */
     public function expire(array $info): bool
     {
-        return ($info['expired_time'] == 0 || $info['expired_time'] > time());
+        return empty($info['expired_time']) || strtotime($info['expired_time']) > time();
     }
 }

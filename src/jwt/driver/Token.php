@@ -70,11 +70,11 @@ class Token
      * @throws JwtException
      * @return array
      */
-    public function parse(string $jwt, string $key, string $alg = 'HS256'): array
+    public function getData(string $jwt, string $key, string $alg = 'HS256'): array
     {
         $ticket = explode('.', $jwt);
         if (count($ticket) != 3) {
-            throw new JwtException('无效的格式', JwtException::JWT_TOKEN_FORMAT_ERROR);
+            throw new JwtException('无效jwt数据', JwtException::JWT_TOKEN_FORMAT_ERROR);
         }
         list($head, $body, $crypt) = $ticket;
         $header = json_decode($this->urlsafeB64Decode($head), true);
@@ -91,7 +91,7 @@ class Token
         }
         // 验证加密方式
         if (!isset($this->algs[$header['alg']])) {
-            throw new JwtException('未定义加密方式', JwtException::JWT_ALG_NOT_FOUND);
+            throw new JwtException('未支持加密方式', JwtException::JWT_ALG_NOT_FOUND);
         }
         if ($header['alg'] != $alg) {
             throw new JwtException('加密算法不支持', JwtException::JWT_ALG_NOT_SUPPORT);
@@ -129,7 +129,7 @@ class Token
     }
 
     /**
-     * 验证jwt有效性,整合parse、verify方法
+     * 验证jwt有效性,整合getData、verify方法
      *
      * @param  string $jwt jwt数据
      * @param  string $key 加密key
@@ -140,7 +140,7 @@ class Token
     public function check(string $jwt, string $key, string $alg = 'HS256'): bool
     {
         // 获取jwt数据
-        $payload = $this->parse($jwt, $key, $alg);
+        $payload = $this->getData($jwt, $key, $alg);
         // 校验
         return $this->verify($payload);
     }
@@ -157,7 +157,7 @@ class Token
     public function sign(string $info, string $key, string $alg = 'HS256'): string
     {
         if (!isset($this->algs[$alg])) {
-            throw new JwtException('未定义加密方式', JwtException::JWT_ALG_NOT_FOUND);
+            throw new JwtException('未支持加密方式', JwtException::JWT_ALG_NOT_FOUND);
         }
 
         list($type, $algorithm) = $this->algs[$alg];
@@ -228,7 +228,7 @@ class Token
     protected function examine(string $info, string $sign, string $key, string $alg = 'HS256'): bool
     {
         if (!isset($this->algs[$alg])) {
-            throw new JwtException('未定义加密方式', JwtException::JWT_ALG_NOT_FOUND);
+            throw new JwtException('未支持的加密方式', JwtException::JWT_ALG_NOT_FOUND);
         }
 
         list($type, $algorithm) = $this->algs[$alg];

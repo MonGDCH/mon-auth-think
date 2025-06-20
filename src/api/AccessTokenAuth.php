@@ -54,7 +54,7 @@ class AccessTokenAuth extends ApiAuth
                     //     'name'      => '测试',
                     //     // 应用状态，1有效 0无效
                     //     'status'    => 1,
-                    //     // 应用过期时间戳
+                    //     // 应用过期时间
                     //     'expired_time'  => 0,
                     // ]
                 ],
@@ -79,74 +79,71 @@ class AccessTokenAuth extends ApiAuth
      *
      * @param string $app_id    应用ID
      * @param string $secret    应用秘钥
+     * @param string $ip        签发ip地址
      * @param array $extend     扩展数据
      * @throws APIException
      * @return string
      */
-    public function create(string $app_id, string $secret, array $extend = []): string
+    public function create(string $app_id, string $secret, string $ip = '', array $extend = []): string
     {
         if (!$this->isInit()) {
             throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
         }
 
-        return $this->getDriver()->create($app_id, $secret, $extend, $this->getConfig('expire'));
+        return $this->getDriver()->create($app_id, $secret, $extend, $ip, $this->getConfig('expire'));
     }
 
     /**
      * 结合Dao数据创建AccessToken
      *
      * @param string $app_id    应用ID
+     * @param string $ip        签发ip地址
      * @param array $extend     扩展数据
      * @throws APIException
      * @return string
      */
-    public function createToken(string $app_id, array $extend = []): string
+    public function createToken(string $app_id, string $ip = '', array $extend = []): string
     {
-        if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
-        }
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
 
         // 创建token
-        return $this->create($app_id, $info['secret'], $extend);
+        return $this->create($app_id, $info['secret'], $ip, $extend);
     }
 
     /**
-     * 校验AccessToken
+     * 获取AccessToken数据
      *
-     * @param string $token token
-     * @param string $app_id  应用ID
-     * @param string $secret  应用秘钥
+     * @param string $token     Token
+     * @param string $app_id    应用ID
+     * @param string $secret    应用秘钥
+     * @param string $ip        请求ip地址
      * @throws APIException
-     * @return array    token数据
+     * @return array
      */
-    public function check(string $token, string $app_id, string $secret): array
+    public function getData(string $token, string $app_id, string $secret, string $ip = ''): array
     {
         if (!$this->isInit()) {
             throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
         }
 
-        return $this->getDriver()->check($token, $app_id, $secret);
+        return $this->getDriver()->getData($token, $app_id, $secret, $ip);
     }
 
     /**
-     * 校验AccessToken
+     * 获取AccessToken数据
      *
-     * @param string $token token
-     * @param string $app_id 应用ID
-     * @return array    token数据
+     * @param string $token     Token
+     * @param string $app_id    应用ID
+     * @param string $ip        请求ip地址
+     * @return array
      */
-    public function checkToken(string $token, string $app_id): array
+    public function getTokenData(string $token, string $app_id, string $ip = ''): array
     {
-        if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
-        }
-
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
 
-        return $this->check($token, $app_id, $info['secret']);
+        return $this->getData($token, $app_id, $info['secret'], $ip);
     }
 
     /**

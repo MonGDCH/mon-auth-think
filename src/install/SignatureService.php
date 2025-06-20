@@ -7,7 +7,6 @@ namespace support\auth;
 use mon\env\Config;
 use mon\util\Instance;
 use mon\auth\api\dao\DatabaseDao;
-use mon\auth\exception\APIException;
 use mon\auth\api\SignatureAuth as Auth;
 
 /**
@@ -26,27 +25,6 @@ class SignatureService
      * @var Auth
      */
     protected $service;
-
-    /**
-     * Token数据
-     *
-     * @var array
-     */
-    protected $data = [];
-
-    /**
-     * 错误信息
-     *
-     * @var string
-     */
-    protected $error = '';
-
-    /**
-     * 错误码
-     *
-     * @var integer
-     */
-    protected $errorCode = 0;
 
     /**
      * 构造方法
@@ -68,40 +46,6 @@ class SignatureService
     }
 
     /**
-     * 获取Token数据
-     *
-     * @return array
-     */
-    public function getData(): array
-    {
-        return $this->data;
-    }
-
-    /**
-     * 获取错误信息
-     *
-     * @return string
-     */
-    public function getError(): string
-    {
-        $error = $this->error;
-        $this->error = '';
-        return $error;
-    }
-
-    /**
-     * 获取错误码
-     *
-     * @return integer
-     */
-    public function getErrorCode(): int
-    {
-        $code = $this->errorCode;
-        $this->errorCode = 0;
-        return $code;
-    }
-
-    /**
      * 注册配置信息
      *
      * @param array $config 配置信息
@@ -118,17 +62,12 @@ class SignatureService
      * 获取应用信息
      *
      * @param string $app_id    应用ID
+     * @throws \mon\auth\exception\APIException
      * @return array
      */
     public function getAppInfo(string $app_id): array
     {
-        try {
-            return $this->getService()->getAppInfo($app_id);
-        } catch (APIException $e) {
-            $this->error = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return [];
-        }
+        return $this->getService()->getAppInfo($app_id);
     }
 
     /**
@@ -137,6 +76,7 @@ class SignatureService
      * @param string $app_id    应用ID
      * @param string $secret    应用秘钥
      * @param array $data       需要签名的数据
+     * @throws \mon\auth\exception\APIException
      * @return array
      */
     public function create(string $app_id, string $secret, array $data = []): array
@@ -149,7 +89,7 @@ class SignatureService
      *
      * @param string $app_id    应用ID
      * @param array $data       需要签名的数据
-     * @throws APIException
+     * @throws \mon\auth\exception\APIException
      * @return array
      */
     public function createToken(string $app_id, array $data = []): array
@@ -162,38 +102,24 @@ class SignatureService
      *
      * @param string $secret    应用秘钥
      * @param array $data       签名数据
+     * @throws \mon\auth\exception\APIException
      * @return boolean
      */
     public function check(string $secret, array $data): bool
     {
-        try {
-            $this->data = $data;
-            // 解析获取Token数据，失败则抛出异常
-            return $this->getService()->check($secret, $data);;
-        } catch (APIException $e) {
-            $this->error = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
+        return $this->getService()->check($secret, $data);;
     }
 
     /**
      * 验证签名
      *
      * @param array $data   签名数据
+     * @throws \mon\auth\exception\APIException
      * @return boolean
      */
     public function checkToken(array $data): bool
     {
-        try {
-            // 解析获取Token数据，失败则抛出异常
-            $this->data = $data;
-            return $this->getService()->checkToken($data);;
-        } catch (APIException $e) {
-            $this->error = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
+        return $this->getService()->checkToken($data);;
     }
 
     /**

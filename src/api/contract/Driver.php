@@ -10,6 +10,4 @@ namespace mon\auth\api\contract;
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-interface Driver
-{
-}
+interface Driver {}

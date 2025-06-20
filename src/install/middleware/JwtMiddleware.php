@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace support\auth\middleware;
 
 use Closure;
-use mon\env\Config;
 use mon\http\Response;
 use support\auth\JwtService;
-use InvalidArgumentException;
-use mon\auth\ErrorHandlerInterface;
+use mon\auth\exception\JwtException;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
 
@@ -22,38 +20,6 @@ use mon\http\interfaces\Middlewareinterface;
 class JwtMiddleware implements Middlewareinterface
 {
     /**
-     * 配置信息
-     *
-     * @var array
-     */
-    protected $config = [];
-
-    /**
-     * 回调处理
-     *
-     * @var mixed
-     */
-    protected $handler;
-
-    /**
-     * 构造方法
-     */
-    public function __construct()
-    {
-        $this->config = array_merge($this->config, Config::instance()->get('auth.jwt.middleware', []));
-    }
-
-    /**
-     * 获取配置信息
-     *
-     * @return array
-     */
-    public function getConfig(): array
-    {
-        return $this->config;
-    }
-
-    /**
      * 中间件实现接口
      *
      * @param RequestInterface $request  请求实例
@@ -62,33 +28,18 @@ class JwtMiddleware implements Middlewareinterface
      */
     public function process(RequestInterface $request, Closure $callback): Response
     {
-        // 中间件配置
-        $config = $this->getConfig();
         // 获取Token，优先的请求头中获取，不存在则从cookie中获取
         $token = $this->getToken($request);
         if (!$token) {
-            return $this->getHandler()->notFound();
+            throw new JwtException('请先登录');
         }
 
-        // 验证Token
-        $check = $this->getService()->check($token);
-        // Token验证不通过
-        if (!$check) {
-            // 错误码
-            $code = $this->getService()->getErrorCode();
-            // 错误信息
-            $msg = $this->getService()->getError();
-            return $this->getHandler()->checkError($code, $msg);
-        }
-
-        // 获取Token数据
-        $data = $this->getService()->getData();
+        // 验证获取Token数据
+        $data = $this->getService()->getTokenData($token);
         // 记录用户ID
-        $uid = $config['uid'];
-        $request->{$uid} = $data['aud'];
+        $request->uid = $data['aud'];
         // 记录Token数据
-        $jwt = $config['jwt'];
-        $request->{$jwt} = $data;
+        $request->jwt = $data;
 
         return $callback($request);
     }
@@ -101,29 +52,13 @@ class JwtMiddleware implements Middlewareinterface
      */
     public function getToken(RequestInterface $request): string
     {
-        if (!$this->config['header']) {
-            throw new InvalidArgumentException('JWT header key is required');
-        }
-        $token = $request->header($this->config['header'], '');
-        if (!$token && !empty($this->config['cookie'])) {
-            $token = $request->cookie($this->config['cookie'], '');
+        $token = $request->header('X-Authorization', '');
+        if (!$token) {
+            // 请求头中没有token，从cookie中获取
+            $token = $request->cookie('X-Authorization', '');
         }
 
         return $token;
-    }
-
-    /**
-     * 获取错误处理回调
-     *
-     * @return mixed
-     */
-    public function getHandler(): ErrorHandlerInterface
-    {
-        if (is_null($this->handler)) {
-            $this->handler = new $this->config['handler']($this->config);
-        }
-
-        return $this->handler;
     }
 
     /**

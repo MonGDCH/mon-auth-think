@@ -10,7 +10,7 @@ use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacException;
 
 /**
- * 用户-角色关联模型
+ * 用户-角色关联Dao模型
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.1   优化代码
@@ -52,9 +52,6 @@ class Access extends Dao
      */
     public function __construct(Auth $auth)
     {
-        if (!$auth->isInit()) {
-            throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
-        }
         $this->auth = $auth;
         $this->table = $this->auth->getConfig('auth_role_access');
         $this->autoTimeFormat = $this->auth->getConfig('time_format');

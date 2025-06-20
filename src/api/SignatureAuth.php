@@ -58,7 +58,7 @@ class SignatureAuth extends ApiAuth
                     //     'name'      => '测试',
                     //     // 应用状态，1有效 0无效
                     //     'status'    => 1,
-                    //     // 应用过期时间戳
+                    //     // 应用过期时间
                     //     'expired_time'  => 0,
                     // ]
                 ],
@@ -105,12 +105,8 @@ class SignatureAuth extends ApiAuth
      */
     public function createToken(string $app_id, array $data = []): array
     {
-        if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
-        }
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
-
         // 创建签名
         return $this->create($app_id, $info['secret'], $data);
     }
@@ -148,15 +144,11 @@ class SignatureAuth extends ApiAuth
      */
     public function checkToken(array $data): bool
     {
-        if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
-        }
         $field = $this->getConfig('field');
         $app_id = $data[$field['app_id']] ?? null;
         if (empty($app_id)) {
             throw new APIException('无效签名', APIException::APPID_PARAMS_FAILD);
         }
-
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
         // 验证签名

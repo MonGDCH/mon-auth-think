@@ -31,23 +31,12 @@ return [
                     'name'          => '测试',
                     // 应用状态，1有效 0无效
                     'status'        => 1,
-                    // 应用过期时间戳
-                    'expired_time'  => 0,
+                    // 应用过期时间
+                    'expired_time'  => '',
                 ]
             ],
             // 数据库驱动操作表，driver驱动为 DatabaseDao 时有效
             'table'     => 'api_sign',
         ]
-    ],
-    // 中间件配置
-    'middleware'    => [
-        // 中间件回调处理
-        'handler'       => \support\auth\middleware\handler\ErrorHandler::class,
-        // 请求参数中AppID键名
-        'appid_name'    => 'app_id',
-        // 请求参数中Token键名
-        'token_name'    => 'access_token',
-        // Token数据在Request实例的属性名
-        'access_token'  => 'access_token'
-    ],
+    ]
 ];

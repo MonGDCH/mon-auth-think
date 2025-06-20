@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace mon\auth\exception;
 
-use Exception;
-use Throwable;
-
 /**
  * 权限模型异常
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class AuthException extends Exception
+class AuthException extends \Exception
 {
     /**
      * 权限模块未初始化
@@ -38,17 +35,35 @@ class AuthException extends Exception
     protected $data = [];
 
     /**
+     * 状态码
+     *
+     * @var integer
+     */
+    protected $status = 401;
+
+    /**
      * 重置构造方法
      *
      * @param string $message   错误信息
      * @param integer $code     错误码
-     * @param Throwable|null $previous  异常
      * @param array $data       异常绑定数据
+     * @param Throwable $previous  异常
      */
-    public function __construct(string $message = "", int $code = 0, Throwable $previous = null, array $data = [])
+    public function __construct(string $message, int $code = 0, int $status = 403, array $data = [], ?\Throwable $previous = null)
     {
+        $this->status = $status;
         $this->data = $data;
         parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * 获取状态码
+     *
+     * @return integer
+     */
+    public function getStatus(): int
+    {
+        return $this->status;
     }
 
     /**

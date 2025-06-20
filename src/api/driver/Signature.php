@@ -24,7 +24,7 @@ class Signature implements Driver
      *
      * @var string
      */
-    protected $encrypt_salt = 'df2!)*&+sdfg_687#@';
+    protected $encrypt_salt = 'df2!)*&+sdfg_dfg687#@';
 
     /**
      * 字段名映射
@@ -49,7 +49,7 @@ class Signature implements Driver
      *
      * @param array $field_map  字段名映射
      */
-    public function __construct(string $salt = 'df2!)*&+sdfg_687#@', array $field_map = [])
+    public function __construct(string $salt = 'df2!)*&+sdfg_dfg687#@', array $field_map = [])
     {
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
@@ -109,7 +109,7 @@ class Signature implements Driver
      *
      * @param string $secret    应用秘钥
      * @param array $data       请求参数
-     * @return void
+     * @return boolean
      */
     public function check(string $secret, array $data): bool
     {
@@ -118,14 +118,15 @@ class Signature implements Driver
             throw new APIException('API签名不存在', APIException::SIGN_NOT_FOUND);
         }
         unset($data[$this->getField('signature')]);
-        if ($sign != $this->getSign($data, $secret)) {
-            throw new APIException('API签名错误', APIException::SIGN_VERIFY_FAIL);
-        }
+        // if ($sign != $this->getSign($data, $secret)) {
+        //     throw new APIException('API签名错误', APIException::SIGN_VERIFY_FAIL);
+        // }
+        $result = ($sign != $this->getSign($data, $secret));
 
         // 触发AccessToken验证事件，回调方法可通过 throw APIException 增加自定义的验证方式
         Event::instance()->trigger('sign_check', $data);
 
-        return true;
+        return $result;
     }
 
     /**

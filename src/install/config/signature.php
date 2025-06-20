@@ -29,10 +29,5 @@ return [
             // 数据库驱动操作表，driver驱动为 DatabaseDao 时有效
             'table' => 'api_sign',
         ]
-    ],
-    // 中间件配置
-    'middleware'    => [
-        // 中间件回调处理
-        'handler'   => \support\auth\middleware\handler\ErrorHandler::class,
-    ],
+    ]
 ];

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace mon\auth\jwt;
 
-use mon\util\Instance;
 use mon\auth\jwt\driver\Token;
 use mon\auth\jwt\driver\Payload;
 use mon\auth\exception\JwtException;
@@ -17,8 +16,6 @@ use mon\auth\exception\JwtException;
  */
 class Auth
 {
-    use Instance;
-
     /**
      * 配置信息
      *
@@ -46,7 +43,7 @@ class Auth
      */
     public function __construct(array $config = [])
     {
-        if (empty($config)) {
+        if (!empty($config)) {
             $this->init($config);
         }
     }
@@ -79,7 +76,7 @@ class Auth
      * @throws JwtException
      * @return string
      */
-    public function create($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
+    public function createToken($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
     {
         $payload = new Payload();
         // 设置签发单位
@@ -107,27 +104,27 @@ class Auth
     }
 
     /**
-     * 验证jwt数据
+     * 验证获取jwt数据
      *
      * @param string $jwt   jwt数据
      * @param string $sub   签发主题
      * @param string $iss   签发单位
      * @throws JwtException
-     * @return array    解析后的payload
+     * @return array        解析后的payload
      */
-    public function check(string $jwt, string $sub = '', string $iss = ''): array
+    public function getTokenData(string $jwt, string $sub = '', string $iss = ''): array
     {
         // 获取jwt内容
-        $payload = Token::instance()->parse($jwt, $this->getConfig('key'), $this->getConfig('alg'));
-        // 验证签发单位
-        $iss = $iss ?: $this->getConfig('iss');
-        if ($iss && (!isset($payload['iss']) || $payload['iss'] != $iss)) {
-            throw new JwtException('Token Iss 异常', JwtException::JWT_PAYLOAD_ISS_ERROR);
-        }
+        $payload = Token::instance()->getData($jwt, $this->getConfig('key'), $this->getConfig('alg'));
         // 验证签发主题
         $sub = $sub ?: $this->getConfig('sub');
         if ($sub && (!isset($payload['sub']) || $payload['sub'] != $sub)) {
             throw new JwtException('Token Sub 异常', JwtException::JWT_PAYLOAD_SUB_ERROR);
+        }
+        // 验证签发单位
+        $iss = $iss ?: $this->getConfig('iss');
+        if ($iss && (!isset($payload['iss']) || $payload['iss'] != $iss)) {
+            throw new JwtException('Token Iss 异常', JwtException::JWT_PAYLOAD_ISS_ERROR);
         }
         // 校验时间有效性
         Token::instance()->verify($payload);

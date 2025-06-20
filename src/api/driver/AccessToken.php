@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace mon\auth\api\driver;
 
-use mon\util\Tool;
 use mon\util\Event;
 use mon\util\Nbed64;
 use mon\util\Instance;
@@ -26,7 +25,7 @@ class AccessToken implements Driver
      *
      * @var string
      */
-    protected $encrypt_salt = 'a!khg#-$%iu_ow1.08';
+    protected $encrypt_salt = 'a!a05kh(g#-$%iu_ow1.08';
 
     /**
      * 字段名映射
@@ -48,7 +47,7 @@ class AccessToken implements Driver
      * @param string $salt
      * @param array $field_map
      */
-    public function __construct(string $salt = 'a!khg#-$%iu_ow1.08', array $field_map = [])
+    public function __construct(string $salt = 'a!a05kh(g#-$%iu_ow1.08', array $field_map = [])
     {
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
@@ -105,10 +104,11 @@ class AccessToken implements Driver
      * @param string $app_id    应用ID
      * @param string $secret    应用秘钥
      * @param array $extend     扩展的数据
+     * @param string $ip        签发ip地址
      * @param integer $exp      有效时间
      * @return string   生成的AccessToken
      */
-    public function create(string $app_id, string $secret, array $extend = [], int $exp = 7200): string
+    public function create(string $app_id, string $secret, array $extend = [], string $ip = '', int $exp = 7200): string
     {
         // 过期时间
         $expire_time = $this->getExpireTime($exp);
@@ -118,7 +118,7 @@ class AccessToken implements Driver
         $data = array_merge($extend, [
             $this->getField('app_id') => $app_id,
             $this->getField('expire') => $expire_time,
-            $this->getField('ip') => Tool::ip()
+            $this->getField('ip') => $ip
         ]);
         $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
@@ -155,13 +155,14 @@ class AccessToken implements Driver
     /**
      * 验证AccessToken
      *
-     * @param string $token token
-     * @param string $app_id  应用ID
-     * @param string $secret  应用秘钥
+     * @param string $token     Token
+     * @param string $ip        请求ip地址
+     * @param string $secret    应用秘钥
+     * @param string $app_id    应用ID
      * @throws ApiException
-     * @return array    token数据
+     * @return array Token数据
      */
-    public function check(string $token, string $app_id, string $secret): array
+    public function getData(string $token, string $app_id, string $secret, string $ip = ''): array
     {
         // 获取token数据
         $data = $this->parse($token, $secret);
@@ -172,6 +173,10 @@ class AccessToken implements Driver
         // 校验有效期
         if (time() > $data[$this->getField('expire')]) {
             throw new ApiException('Token已过期', ApiException::ACCESS_TOKEN_INVALID);
+        }
+        // 验证授权IP
+        if ($ip != $data[$this->getField('ip')]) {
+            throw new ApiException('Token授权IP无效', ApiException::ACCESS_TOKEN_INVALID);
         }
 
         // 触发AccessToken验证事件，回调方法可通过 throw APIException 增加自定义的验证方式

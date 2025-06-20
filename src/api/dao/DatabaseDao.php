@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace mon\auth\api\dao;
 
-use think\facade\Db;
+use mon\thinkORM\Db;
 use mon\auth\api\contract\Dao;
 
 /**
@@ -73,6 +73,6 @@ class DatabaseDao implements Dao
      */
     public function expire(array $info): bool
     {
-        return ($info['expired_time'] == 0 || $info['expired_time'] > time());
+        return empty($info['expired_time']) || strtotime($info['expired_time']) > time();
     }
 }

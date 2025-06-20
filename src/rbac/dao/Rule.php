@@ -52,9 +52,6 @@ class Rule extends Dao
      */
     public function __construct(Auth $auth)
     {
-        if (!$auth->isInit()) {
-            throw new RbacException('权限服务未初始化', RbacException::RBAC_AUTH_INIT_ERROR);
-        }
         $this->auth = $auth;
         $this->table = $this->auth->getConfig('auth_rule');
         $this->autoTimeFormat = $this->auth->getConfig('time_format');

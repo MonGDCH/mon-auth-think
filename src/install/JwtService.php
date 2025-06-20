@@ -7,7 +7,6 @@ namespace support\auth;
 use mon\env\Config;
 use mon\util\Instance;
 use mon\auth\jwt\Auth;
-use mon\auth\exception\JwtException;
 
 /**
  * JWT权限控制服务
@@ -27,33 +26,12 @@ class JwtService
     protected $service;
 
     /**
-     * Token数据
-     *
-     * @var array
-     */
-    protected $data = [];
-
-    /**
-     * 错误信息
-     *
-     * @var string
-     */
-    protected $error = '';
-
-    /**
-     * 错误码
-     *
-     * @var integer
-     */
-    protected $errorCode = 0;
-
-    /**
      * 私有构造方法
      */
     protected function __construct()
     {
         $config = Config::instance()->get('auth.jwt', []);
-        $this->service = (new Auth)->init($config);
+        $this->service = new Auth($config);
     }
 
     /**
@@ -67,52 +45,6 @@ class JwtService
     }
 
     /**
-     * 获取Token数据
-     *
-     * @return array
-     */
-    public function getData(): array
-    {
-        return $this->data;
-    }
-
-    /**
-     * 获取错误信息
-     *
-     * @return string
-     */
-    public function getError(): string
-    {
-        $error = $this->error;
-        $this->error = '';
-        return $error;
-    }
-
-    /**
-     * 获取错误码
-     *
-     * @return integer
-     */
-    public function getErrorCode(): int
-    {
-        $code = $this->errorCode;
-        $this->errorCode = 0;
-        return $code;
-    }
-
-    /**
-     * 注册配置信息
-     *
-     * @param array $config
-     * @return JwtService
-     */
-    public function register(array $config): JwtService
-    {
-        $this->getService()->init($config);
-        return $this;
-    }
-
-    /**
      * 创建Token
      *
      * @param int|string $aud   面向的用户ID
@@ -122,32 +54,25 @@ class JwtService
      * @param integer $exp      有效时间
      * @param integer $nbf      生效时间
      * @param mixed $jti        jwt编号
-     * @throws JwtException
+     * @throws \mon\auth\exception\JwtException
      * @return string
      */
-    public function create($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
+    public function createToken($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
     {
-        return $this->getService()->create($aud, $ext, $sub, $iss, $exp, $nbf, $jti);
+        return $this->getService()->createToken($aud, $ext, $sub, $iss, $exp, $nbf, $jti);
     }
 
     /**
-     * 验证Token
+     * 校验Token，获取用户信息
      *
-     * @param string $jwt   jwt数据
+     * @param string $token jwt数据
      * @param string $sub   签发主题
      * @param string $iss   签发单位
-     * @return boolean
+     * @throws \mon\auth\exception\JwtException
+     * @return array
      */
-    public function check(string $jwt, string $sub = '', string $iss = ''): bool
+    public function getTokenData(string $token, string $sub = '', string $iss = ''): array
     {
-        try {
-            // 解析获取Token数据，失败则抛出异常
-            $this->data = $this->getService()->check($jwt, $sub, $iss);
-            return true;
-        } catch (JwtException $e) {
-            $this->error = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
+        return $this->getService()->getTokenData($token, $sub, $iss);
     }
 }

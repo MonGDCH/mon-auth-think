@@ -24,13 +24,4 @@ return [
     'time_format'       => '',
     // 是否触发事件
     'trigger_event'     => false,
-    // 中间件配置
-    'middleware'        => [
-        // 中间件回调处理
-        'handler'   => \support\auth\middleware\handler\ErrorHandler::class,
-        // Request实例中用户ID的属性名
-        'uid'       => 'uid',
-        // 权限验证根路径
-        'root_path' => ''
-    ],
 ];

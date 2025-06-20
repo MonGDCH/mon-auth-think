@@ -25,7 +25,7 @@ abstract class ApiAuth implements ApiAuthInterface
     /**
      * 驱动实例
      *
-     * @var DriverInterface
+     * @var Driver
      */
     protected $driver;
 

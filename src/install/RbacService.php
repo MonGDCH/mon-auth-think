@@ -7,7 +7,6 @@ namespace support\auth;
 use mon\env\Config;
 use mon\util\Instance;
 use mon\auth\rbac\Auth;
-use mon\auth\exception\RbacException;
 
 /**
  * RBAC权限控制服务
@@ -32,26 +31,12 @@ class RbacService
     protected $service;
 
     /**
-     * 错误信息
-     *
-     * @var string
-     */
-    protected $error = '';
-
-    /**
-     * 错误码
-     *
-     * @var integer
-     */
-    protected $errorCode = 0;
-
-    /**
      * 私有构造方法
      */
     protected function __construct()
     {
         $config = Config::instance()->get('auth.rbac', []);
-        $this->service = Auth::instance()->init($config);
+        $this->service = new Auth($$config);
     }
 
     /**
@@ -62,30 +47,6 @@ class RbacService
     public function getService(): Auth
     {
         return $this->service;
-    }
-
-    /**
-     * 获取错误信息
-     *
-     * @return string
-     */
-    public function getError(): string
-    {
-        $error = $this->error;
-        $this->error = '';
-        return $error;
-    }
-
-    /**
-     * 获取错误码
-     *
-     * @return integer
-     */
-    public function getErrorCode(): int
-    {
-        $code = $this->errorCode;
-        $this->errorCode = 0;
-        return $code;
     }
 
     /**
@@ -106,24 +67,12 @@ class RbacService
      * @param  string|array     $name     需要验证的规则列表,支持字符串的单个权限规则或索引数组多个权限规则
      * @param  integer|string   $uid      认证用户的id
      * @param  boolean 		    $relation 如果为 true 表示满足任一条规则即通过验证;如果为 false 则表示需满足所有规则才能通过验证
+     * @throws \mon\auth\exception\RbacException
      * @return boolean           	  成功返回true，失败返回false
      */
     public function check($name, $uid, bool $relation = true): bool
     {
-        try {
-            $check = $this->getService()->check($name, $uid, $relation);
-            if (!$check) {
-                $this->error = '暂无权限';
-                $this->errorCode = 0;
-                return false;
-            }
-
-            return true;
-        } catch (RbacException $e) {
-            $this->error = $e->getMessage();
-            $this->errorCode = $e->getCode();
-            return false;
-        }
+        return $this->getService()->check($name, $uid, $relation);
     }
 
     /**

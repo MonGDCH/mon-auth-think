@@ -74,4 +74,17 @@ class JwtException extends AuthException
      * jwt-token-payload的sub错误
      */
     const JWT_PAYLOAD_SUB_ERROR = 30420;
+
+    /**
+     * 重置构造方法
+     *
+     * @param string $message   错误信息
+     * @param integer $code     错误码
+     * @param array $data       异常绑定数据
+     * @param Throwable $previous  异常
+     */
+    public function __construct(string $message, int $code = 0, int $status = 401, array $data = [], ?\Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $status, $data, $previous);
+    }
 }

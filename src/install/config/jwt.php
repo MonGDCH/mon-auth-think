@@ -20,17 +20,4 @@ return [
     'nbf'       => 0,
     // 有效时间，生效时间 + exp
     'exp'       => 3600,
-    // 中间件配置
-    'middleware'    => [
-        // 中间件回调处理
-        'handler'   => \support\auth\middleware\handler\ErrorHandler::class,
-        // 请求头token名
-        'header'    => 'X-Authorization',
-        // cookie的token名
-        'cookie'    => 'X-Authorization',
-        // 用户ID(aud)在Request实例的属性名
-        'uid'       => 'uid',
-        // Token数据在Request实例的属性名
-        'jwt'       => 'jwt'
-    ],
 ];

@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace support\auth\middleware;
 
 use Closure;
-use mon\env\Config;
 use mon\http\Response;
 use support\auth\RbacService;
-use mon\auth\ErrorHandlerInterface;
+use mon\auth\exception\RbacException;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
 
@@ -21,38 +20,6 @@ use mon\http\interfaces\Middlewareinterface;
 class RbacMiddleware implements Middlewareinterface
 {
     /**
-     * 配置信息
-     *
-     * @var array
-     */
-    protected $config = [];
-
-    /**
-     * 回调处理
-     *
-     * @var mixed
-     */
-    protected $handler;
-
-    /**
-     * 构造方法
-     */
-    public function __construct()
-    {
-        $this->config = array_merge($this->config, Config::instance()->get('auth.rbac.middleware', []));
-    }
-
-    /**
-     * 获取配置信息
-     *
-     * @return array
-     */
-    public function getConfig(): array
-    {
-        return $this->config;
-    }
-
-    /**
      * 中间件实现接口
      *
      * @param RequestInterface $request  请求实例
@@ -61,25 +28,17 @@ class RbacMiddleware implements Middlewareinterface
      */
     public function process(RequestInterface $request, Closure $callback): Response
     {
-        // 中间件配置
-        $config = $this->getConfig();
-        // 用户ID键名
-        $uid = $config['uid'];
         // 验证登录
-        if (!$request->{$uid}) {
+        if (!$request->uid) {
             // 不存在用户ID，未登录
-            return $this->getHandler()->notFound();
+            throw new RbacException('请先登录');
         }
 
         // 验证权限
-        $check = $this->getService()->check($this->getPath($request), $request->{$uid});
+        $check = $this->getService()->check($this->getPath($request), $request->uid);
         // 权限验证不通过
         if (!$check) {
-            // 错误码
-            $code = $this->getService()->getErrorCode();
-            // 错误信息
-            $msg = $this->getService()->getError();
-            return $this->getHandler()->checkError($code, $msg);
+            throw new RbacException('抱歉，您暂无权限');
         }
 
         return $callback($request);
@@ -93,28 +52,7 @@ class RbacMiddleware implements Middlewareinterface
      */
     public function getPath(RequestInterface $request): string
     {
-        $path = $request->path();
-
-        $root = $this->getConfig()['root_path'];
-        if (!empty($root)) {
-            $path = $root . $path;
-        }
-
-        return $path;
-    }
-
-    /**
-     * 获取错误处理回调
-     *
-     * @return mixed
-     */
-    public function getHandler(): ErrorHandlerInterface
-    {
-        if (is_null($this->handler)) {
-            $this->handler = new $this->config['handler']($this->config);
-        }
-
-        return $this->handler;
+        return $request->path();
     }
 
     /**

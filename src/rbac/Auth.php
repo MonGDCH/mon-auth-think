@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace mon\auth\rbac;
 
 use mon\util\Event;
-use mon\thinkORM\Dao;
-use mon\util\Instance;
+use mon\auth\rbac\dao\Rule;
+use mon\auth\rbac\dao\Role;
+use mon\auth\rbac\dao\Access;
 use mon\auth\exception\RbacException;
 
 /**
@@ -25,15 +26,6 @@ use mon\auth\exception\RbacException;
  */
 class Auth
 {
-    use Instance;
-
-    /**
-     * 初始化标志
-     *
-     * @var boolean
-     */
-    protected $init = false;
-
     /**
      * 缓存的模型实例
      *
@@ -66,9 +58,16 @@ class Auth
     ];
 
     /**
-     * 私有化构造方法
+     * 构造方法
+     *
+     * @param array $config 配置信息
      */
-    protected function __construct() {}
+    public function __construct(array $config = [])
+    {
+        if (!empty($config)) {
+            $this->config = array_merge($this->config, $config);
+        }
+    }
 
     /**
      * 初始化方法
@@ -81,20 +80,9 @@ class Auth
         if (!empty($config)) {
             $this->config = array_merge($this->config, $config);
         }
-        // 标志初始化
-        $this->init = true;
         return $this;
     }
 
-    /**
-     * 是否已初始化
-     *
-     * @return boolean
-     */
-    public function isInit(): bool
-    {
-        return $this->init;
-    }
 
     /**
      * 设置配置
@@ -188,8 +176,7 @@ class Auth
     {
         // 获取规则节点
         $ids = [];
-        /** @var \mon\auth\rbac\dao\Access $dao 关联表Dao */
-        $dao = $this->dao('access');
+        $dao = $this->getAccessDao();
         $roles = $dao->getUserRole($uid);
         foreach ($roles as $v) {
             if (!$v || !trim($v['rules'], ',')) {
@@ -246,8 +233,7 @@ class Auth
             return [];
         }
         // 构造查询条件
-        /** @var \mon\auth\rbac\dao\Rule $dao 规则表Dao */
-        $dao = $this->dao('rule');
+        $dao = $this->getRuleDao();
         $query = $dao->field(['id', 'pid', 'rule', 'title'])->where('status', $this->config['effective_status']);
         if (!in_array($this->config['admin_mark'], $ids)) {
             $query->where('id', 'IN', $ids);
@@ -257,25 +243,53 @@ class Auth
     }
 
     /**
-     * 获取Dao对象
+     * 用户-角色关联Dao模型
      *
-     * @param string $name  名称
-     * @param boolean $cache    是否从缓存中获取
-     * @return Dao
+     * @param boolean $cache    是否缓存
+     * @return Access
      */
-    public function dao(string $name, bool $cache = true): Dao
+    public function getAccessDao(bool $cache = true): Access
     {
-        if (!in_array(strtolower($name), ['access', 'role', 'rule'])) {
-            throw new RbacException('不存在对应RBAC权限模型', RbacException::RBAC_MODEL_NOT_FOUND);
-        }
-
         // 获取实例
+        $name = 'access';
         if ($cache && isset($this->daos[$name])) {
             return $this->daos[$name];
         }
+        $this->daos[$name] = new Access($this);
+        return $this->daos[$name];
+    }
 
-        $class = '\\mon\\auth\\rbac\\dao\\' . ucwords($name);
-        $this->daos[$name] = new $class($this);
+    /**
+     * 获取角色Dao模型
+     *
+     * @param boolean $cache    是否缓存
+     * @return Role
+     */
+    public function getRoleDao(bool $cache = true): Role
+    {
+        // 获取实例
+        $name = 'role';
+        if ($cache && isset($this->daos[$name])) {
+            return $this->daos[$name];
+        }
+        $this->daos[$name] = new Role($this);
+        return $this->daos[$name];
+    }
+
+    /**
+     * 获取规则Dao模型
+     *
+     * @param boolean $cache
+     * @return Rule
+     */
+    public function getRuleDao(bool $cache = true): Rule
+    {
+        // 获取实例
+        $name = 'role';
+        if ($cache && isset($this->daos[$name])) {
+            return $this->daos[$name];
+        }
+        $this->daos[$name] = new Rule($this);
         return $this->daos[$name];
     }
 
