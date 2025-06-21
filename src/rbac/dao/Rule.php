@@ -6,7 +6,7 @@ use Throwable;
 use mon\thinkORM\Dao;
 use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
-use mon\auth\exception\RbacException;
+use mon\auth\exception\RbacDaoException;
 use mon\auth\rbac\UpdateChildrenService;
 
 /**
@@ -36,7 +36,7 @@ class Rule extends Dao
      *
      * @var boolean
      */
-    protected $autoWriteTimestamp = true;
+    protected $autoWriteTimestamp = false;
 
     /**
      * 自动写入时间戳格式，空则直接写入时间戳
@@ -54,6 +54,7 @@ class Rule extends Dao
     {
         $this->auth = $auth;
         $this->table = $this->auth->getConfig('auth_rule');
+        $this->autoWriteTimestamp = $this->auth->getConfig('write_time');
         $this->autoTimeFormat = $this->auth->getConfig('time_format');
     }
 
@@ -62,14 +63,14 @@ class Rule extends Dao
      *
      * @param array $option 规则参数
      * @param array $ext    扩展写入字段
-     * @throws RbacException
+     * @throws RbacDaoException
      * @return integer
      */
     public function add(array $option, array $ext = []): int
     {
         $check = $this->validate()->scope('rule_add')->data($option)->check();
         if (!$check) {
-            throw new RbacException('新增权限规则参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('新增权限规则参数错误：' . $this->validate()->getError());
         }
 
         $status = $option['status'];
@@ -79,12 +80,12 @@ class Rule extends Dao
         if ($pid > 0) {
             $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'status'])->get();
             if (!$parentInfo) {
-                throw new RbacException('新增权限规则失败： 父级权限规则不存在');
+                throw new RbacDaoException('新增权限规则失败： 父级权限规则不存在');
             }
             // 比较状态
             $invalid_status = $this->auth->getConfig('invalid_status');
             if ($parentInfo['status'] == $invalid_status && $status != $invalid_status) {
-                throw new RbacException('新增权限规则失败： 父级权限规则为不可用状态下，子级规则必须为不可用状态');
+                throw new RbacDaoException('新增权限规则失败： 父级权限规则为不可用状态下，子级规则必须为不可用状态');
             }
 
             $pids = $parentInfo['pids'] . ',' . $pid;
@@ -100,7 +101,7 @@ class Rule extends Dao
         ]);
         $rule_id = $this->save($info, true, true);
         if (!$rule_id) {
-            throw new RbacException('新增权限规则失败： 新增权限规则失败');
+            throw new RbacDaoException('新增权限规则失败： 新增权限规则失败');
         }
 
         return intval($rule_id);
@@ -117,13 +118,13 @@ class Rule extends Dao
     {
         $check = $this->validate()->scope('rule_modify')->data($option)->check();
         if (!$check) {
-            throw new RbacException('修改权限规则参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('修改权限规则参数错误：' . $this->validate()->getError());
         }
 
         $idx = $option['id'];
         $ruleInfo = $this->where(['id' => $idx])->field(['id', 'pid', 'pids', 'status'])->get();
         if (!$ruleInfo) {
-            throw new RbacException('修改权限规则失败： 权限规则不存在');
+            throw new RbacDaoException('修改权限规则失败： 权限规则不存在');
         }
 
         $status = $option['status'];
@@ -137,12 +138,12 @@ class Rule extends Dao
         if ($pid > 0 && $updatePids) {
             $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'status'])->get();
             if (!$parentInfo) {
-                throw new RbacException('修改权限规则失败： 父级权限规则不存在');
+                throw new RbacDaoException('修改权限规则失败： 父级权限规则不存在');
             }
             // 比较状态
             $invalid_status = $this->auth->getConfig('invalid_status');
             if ($parentInfo['status'] == $invalid_status && $status != $invalid_status) {
-                throw new RbacException('修改权限规则失败： 父级权限规则为不可用状态下，子级规则必须为不可用状态');
+                throw new RbacDaoException('修改权限规则失败： 父级权限规则为不可用状态下，子级规则必须为不可用状态');
             }
 
             $pids = $parentInfo['pids'] . ',' . $pid;
@@ -162,7 +163,7 @@ class Rule extends Dao
             ]);
             $save = $this->where(['id' => $idx])->save($modifyInfo);
             if (!$save) {
-                throw new RbacException('修改权限规则失败： 修改规则信息失败');
+                throw new RbacDaoException('修改权限规则失败： 修改规则信息失败');
             }
 
             // 更新后代信息
@@ -178,7 +179,7 @@ class Rule extends Dao
                     $save = $hasChildren ? $this->where('FIND_IN_SET(' . $idx . ', pids)')->save(['status' => $status]) : true;
                 }
                 if (!$save) {
-                    throw new RbacException('修改权限规则失败： 批量更新后代节点数据失败');
+                    throw new RbacDaoException('修改权限规则失败： 批量更新后代节点数据失败');
                 }
             }
 

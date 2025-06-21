@@ -27,9 +27,7 @@
         "psr-4": {
             "mon\\auth\\": "src"
         },
-        "files": [
-            "src/support.php"
-        ]
+        "files": []
     },
     "repositories": {
         "packagist": {

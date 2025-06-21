@@ -39,19 +39,9 @@ class AccessTokenMiddleware implements Middlewareinterface
         }
 
         // 验证签名，获取Token中的数据
-        $data = $this->getService()->getTokenData($token, $appid, $request->ip());
+        $data = AccessTokenService::instance()->getTokenData($token, $appid, $request->ip());
         $request->access_token = $data;
 
         return $callback($request);
-    }
-
-    /**
-     * 获取服务
-     *
-     * @return AccessTokenService
-     */
-    public function getService(): AccessTokenService
-    {
-        return AccessTokenService::instance();
     }
 }

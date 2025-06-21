@@ -29,21 +29,11 @@ class SignatureMiddleware implements Middlewareinterface
     public function process(RequestInterface $request, Closure $callback): Response
     {
         // 验证签名
-        $check = $this->getService()->checkToken($request->post());
+        $check = SignatureService::instance()->checkToken($request->post());
         if (!$check) {
             throw new APIException('无效的App signature数据');
         }
 
         return $callback($request);
-    }
-
-    /**
-     * 获取服务
-     *
-     * @return SignatureService
-     */
-    public function getService(): SignatureService
-    {
-        return SignatureService::instance();
     }
 }

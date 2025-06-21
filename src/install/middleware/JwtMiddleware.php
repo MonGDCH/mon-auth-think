@@ -35,7 +35,7 @@ class JwtMiddleware implements Middlewareinterface
         }
 
         // 验证获取Token数据
-        $data = $this->getService()->getTokenData($token);
+        $data = JwtService::instance()->getTokenData($token);
         // 记录用户ID
         $request->uid = $data['aud'];
         // 记录Token数据
@@ -59,15 +59,5 @@ class JwtMiddleware implements Middlewareinterface
         }
 
         return $token;
-    }
-
-    /**
-     * 获取服务
-     *
-     * @return JwtService
-     */
-    public function getService(): JwtService
-    {
-        return JwtService::instance();
     }
 }

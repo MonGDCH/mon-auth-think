@@ -35,33 +35,12 @@ class RbacMiddleware implements Middlewareinterface
         }
 
         // 验证权限
-        $check = $this->getService()->check($this->getPath($request), $request->uid);
+        $check = RbacService::instance()->check($request->path(), $request->uid);
         // 权限验证不通过
         if (!$check) {
             throw new RbacException('抱歉，您暂无权限');
         }
 
         return $callback($request);
-    }
-
-    /**
-     * 获取验证路径
-     *
-     * @param RequestInterface $request
-     * @return string
-     */
-    public function getPath(RequestInterface $request): string
-    {
-        return $request->path();
-    }
-
-    /**
-     * 获取服务
-     *
-     * @return RbacService
-     */
-    public function getService(): RbacService
-    {
-        return RbacService::instance();
     }
 }

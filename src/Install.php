@@ -41,6 +41,7 @@ class Install
      */
     protected static $dir_relation = [
         'install/middleware' => 'support/auth/middleware',
+        'install/command'  => 'support/command/auth',
     ];
 
     /**

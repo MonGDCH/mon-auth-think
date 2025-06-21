@@ -51,8 +51,10 @@ class Auth
         'effective_status'  => 1,
         // 无效的状态值
         'invalid_status'    => 0,
+        // 是否自动写入时间戳
+        'write_time'        => false,
         // 时间写入格式化
-        'time_format'       => '',
+        'time_format'       => 'Y-m-d H:i:s',
         // 是否触发事件
         'trigger_event'     => false,
     ];

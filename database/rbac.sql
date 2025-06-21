@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `%s` (
   UNIQUE KEY `uid_gid` (`uid`,`gid`),
   KEY `uid` (`uid`),
   KEY `gid` (`gid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组别用户关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色人员关联表';
 
 
 CREATE TABLE IF NOT EXISTS `%s` (

@@ -36,7 +36,7 @@ class RbacService
     protected function __construct()
     {
         $config = Config::instance()->get('auth.rbac', []);
-        $this->service = new Auth($$config);
+        $this->service = new Auth($config);
     }
 
     /**
