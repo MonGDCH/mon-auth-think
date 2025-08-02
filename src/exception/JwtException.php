@@ -16,6 +16,11 @@ class JwtException extends AuthException
     const JWT_EXCEPTION = 30000;
 
     /**
+     * jwt配置不存在
+     */
+    const JWT_CONFIG_NOT_FOUND = 30010;
+
+    /**
      * 未定义加密方式
      */
     const JWT_ALG_NOT_FOUND = 30100;

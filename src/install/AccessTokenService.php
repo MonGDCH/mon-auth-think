@@ -20,20 +20,11 @@ class AccessTokenService
     use Instance;
 
     /**
-     * 缓存服务对象
+     * 服务对象
      *
      * @var Auth
      */
     protected $service;
-
-    /**
-     * 构造方法
-     */
-    protected function __construct()
-    {
-        $config = Config::instance()->get('auth.accesstoken', []);
-        $this->service = new Auth($this->parseConfig($config));
-    }
 
     /**
      * 获取权限服务
@@ -42,6 +33,10 @@ class AccessTokenService
      */
     public function getService(): Auth
     {
+        if (!$this->service) {
+            $config = Config::instance()->get('auth.accesstoken', []);
+            $this->service = new Auth($this->parseConfig($config));
+        }
         return $this->service;
     }
 

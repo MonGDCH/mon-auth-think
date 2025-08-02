@@ -24,20 +24,11 @@ class RbacService
     use Instance;
 
     /**
-     * 缓存服务对象
+     * 服务对象
      *
      * @var Auth
      */
     protected $service;
-
-    /**
-     * 私有构造方法
-     */
-    protected function __construct()
-    {
-        $config = Config::instance()->get('auth.rbac', []);
-        $this->service = new Auth($config);
-    }
 
     /**
      * 获取权限服务
@@ -46,6 +37,10 @@ class RbacService
      */
     public function getService(): Auth
     {
+        if (!$this->service) {
+            $config = Config::instance()->get('auth.rbac', []);
+            $this->service = new Auth($config);
+        }
         return $this->service;
     }
 

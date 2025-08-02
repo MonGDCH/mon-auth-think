@@ -8,16 +8,23 @@
 */
 
 return [
-    // 加密key
-    'key'       => '%s',
-    // 加密算法
-    'alg'       => 'HS256',
-    // 签发单位
-    'iss'       => 'Gaia-Auth',
-    // 签发主题
-    'sub'       => 'User-Auth',
-    // 生效时间，签发时间 + nbf
-    'nbf'       => 0,
-    // 有效时间，生效时间 + exp
-    'exp'       => 7200,
+    // 默认权限配置标识
+    'default' => 'admin',
+    // 权限配置列表
+    'configs' => [
+        'admin' => [
+            // 加密key
+            'key'       => '%s',
+            // 加密算法
+            'alg'       => 'HS256',
+            // 签发单位
+            'iss'       => 'Gaia-Admin-Auth',
+            // 签发主题
+            'sub'       => 'Admin-User-Auth',
+            // 生效时间，签发时间 + nbf
+            'nbf'       => 0,
+            // 有效时间，生效时间 + exp
+            'exp'       => 7200,
+        ]
+    ]
 ];

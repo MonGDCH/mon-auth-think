@@ -7,6 +7,7 @@ namespace support\auth;
 use mon\env\Config;
 use mon\util\Instance;
 use mon\auth\jwt\Auth;
+use mon\auth\exception\JwtException;
 
 /**
  * JWT权限控制服务
@@ -19,29 +20,30 @@ class JwtService
     use Instance;
 
     /**
-     * 缓存服务对象
+     * 服务对象列表
      *
-     * @var Auth
+     * @var Auth[]
      */
-    protected $service;
-
-    /**
-     * 私有构造方法
-     */
-    protected function __construct()
-    {
-        $config = Config::instance()->get('auth.jwt', []);
-        $this->service = new Auth($config);
-    }
+    protected $services;
 
     /**
      * 获取权限服务
      *
+     * @param string $name 配置标识
      * @return Auth
      */
-    public function getService(): Auth
+    public function getService(string $name = ''): Auth
     {
-        return $this->service;
+        $name = $name ?: Config::instance()->get('auth.jwt.default', '');
+        if (!isset($this->services[$name])) {
+            $config = Config::instance()->get('auth.jwt.configs.' . $name, []);
+            if (!$config) {
+                throw new JwtException('JWT配置标识不存在', JwtException::JWT_CONFIG_NOT_FOUND);
+            }
+            $this->services[$name] = new Auth($config);
+        }
+
+        return $this->services[$name];
     }
 
     /**
@@ -54,12 +56,13 @@ class JwtService
      * @param integer $exp      有效时间
      * @param integer $nbf      生效时间
      * @param mixed $jti        jwt编号
+     * @param string $jwt       配置标识
      * @throws \mon\auth\exception\JwtException
      * @return string
      */
-    public function createToken($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null): string
+    public function createToken($aud, array $ext = [], string $sub = '', string $iss = '', int $exp = 0, int $nbf = 0, $jti = null, string $jwt = ''): string
     {
-        return $this->getService()->createToken($aud, $ext, $sub, $iss, $exp, $nbf, $jti);
+        return $this->getService($jwt)->createToken($aud, $ext, $sub, $iss, $exp, $nbf, $jti);
     }
 
     /**
@@ -68,11 +71,12 @@ class JwtService
      * @param string $token jwt数据
      * @param string $sub   签发主题
      * @param string $iss   签发单位
+     * @param string $jwt   配置标识
      * @throws \mon\auth\exception\JwtException
      * @return array
      */
-    public function getTokenData(string $token, string $sub = '', string $iss = ''): array
+    public function getTokenData(string $token, string $sub = '', string $iss = '', string $jwt = ''): array
     {
-        return $this->getService()->getTokenData($token, $sub, $iss);
+        return $this->getService($jwt)->getTokenData($token, $sub, $iss);
     }
 }
