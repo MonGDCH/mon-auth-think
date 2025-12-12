@@ -27,10 +27,6 @@ class Install
      * @var array
      */
     protected static $file_relation = [
-        'install/JwtService.php' => 'support/auth/JwtService.php',
-        'install/RbacService.php' => 'support/auth/RbacService.php',
-        'install/SignatureService.php' => 'support/auth/SignatureService.php',
-        'install/AccessTokenService.php' => 'support/auth/AccessTokenService.php',
         'install/config/rbac.php' => 'config/auth/rbac.php',
     ];
 
@@ -40,8 +36,7 @@ class Install
      * @var array
      */
     protected static $dir_relation = [
-        'install/middleware' => 'support/auth/middleware',
-        'install/command'  => 'support/command/auth',
+        'install/support'  => 'support/auth',
     ];
 
     /**

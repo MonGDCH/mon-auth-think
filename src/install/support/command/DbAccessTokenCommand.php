@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace support\command\auth;
+namespace support\auth\command;
 
-use mon\util\Sql;
 use mon\env\Config;
 use mon\thinkORM\Db;
 use mon\console\Input;

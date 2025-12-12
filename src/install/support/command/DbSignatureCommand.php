@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace support\command\auth;
+namespace support\auth\command;
 
-use mon\util\Sql;
 use mon\env\Config;
 use mon\thinkORM\Db;
 use mon\console\Input;
@@ -19,37 +18,37 @@ use mon\console\Command;
  */
 class DbSignatureCommand extends Command
 {
-    /**
-     * 指令名
-     *
-     * @var string
-     */
-    protected static $defaultName = 'dbSignature:publish';
+  /**
+   * 指令名
+   *
+   * @var string
+   */
+  protected static $defaultName = 'dbSignature:publish';
 
-    /**
-     * 指令描述
-     *
-     * @var string
-     */
-    protected static $defaultDescription = 'Publish the signature database.';
+  /**
+   * 指令描述
+   *
+   * @var string
+   */
+  protected static $defaultDescription = 'Publish the signature database.';
 
-    /**
-     * 指令分组
-     *
-     * @var string
-     */
-    protected static $defaultGroup = 'Auth';
+  /**
+   * 指令分组
+   *
+   * @var string
+   */
+  protected static $defaultGroup = 'Auth';
 
-    /**
-     * 执行指令
-     *
-     * @param  Input  $in  输入实例
-     * @param  Output $out 输出实例
-     * @return integer  exit状态码
-     */
-    public function execute(Input $in, Output $out)
-    {
-        $content = <<<SQL
+  /**
+   * 执行指令
+   *
+   * @param  Input  $in  输入实例
+   * @param  Output $out 输出实例
+   * @return integer  exit状态码
+   */
+  public function execute(Input $in, Output $out)
+  {
+    $content = <<<SQL
 CREATE TABLE IF NOT EXISTS `%s` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `app_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '应用ID',
@@ -64,13 +63,13 @@ CREATE TABLE IF NOT EXISTS `%s` (
   UNIQUE KEY `app_id`(`app_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ApiSignature授权表';
 SQL;
-        // 表名
-        $table = Config::instance()->get('auth.signature.dao.construct.table', 'api_signs');
-        // 建表sql
-        $sql = sprintf($content, $table);
-        // 建表
-        Db::setConfig(Config::instance()->get('database', []));
-        Db::execute($sql);
-        return $out->block('Create Table `' . $table . '`', 'SUCCESS');
-    }
+    // 表名
+    $table = Config::instance()->get('auth.signature.dao.construct.table', 'api_signs');
+    // 建表sql
+    $sql = sprintf($content, $table);
+    // 建表
+    Db::setConfig(Config::instance()->get('database', []));
+    Db::execute($sql);
+    return $out->block('Create Table `' . $table . '`', 'SUCCESS');
+  }
 }

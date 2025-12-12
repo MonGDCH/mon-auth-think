@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace support\command\auth;
+namespace support\auth\command;
 
-use mon\util\Sql;
 use mon\env\Config;
 use mon\thinkORM\Db;
 use mon\console\Input;
@@ -49,9 +48,6 @@ class DbRbacCommand extends Command
      */
     public function execute(Input $in, Output $out)
     {
-        // 读取sql文件
-        $file = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'rbac.sql';
-        $sqls = Sql::parseFile($file);
         // 表名
         $auth_role = Config::instance()->get('auth.rbac.auth_role', 'auth_role');
         $auth_access = Config::instance()->get('auth.rbac.auth_role_access', 'auth_access');
