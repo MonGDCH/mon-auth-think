@@ -287,7 +287,7 @@ class Auth
     public function getRuleDao(bool $cache = true): Rule
     {
         // 获取实例
-        $name = 'role';
+        $name = 'rule';
         if ($cache && isset($this->daos[$name])) {
             return $this->daos[$name];
         }

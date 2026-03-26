@@ -74,7 +74,7 @@ class Token
     {
         $ticket = explode('.', $jwt);
         if (count($ticket) != 3) {
-            throw new JwtException('无效jwt数据', JwtException::JWT_TOKEN_FORMAT_ERROR);
+            throw new JwtException('无效Token数据', JwtException::JWT_TOKEN_FORMAT_ERROR);
         }
         list($head, $body, $crypt) = $ticket;
         $header = json_decode($this->urlsafeB64Decode($head), true);

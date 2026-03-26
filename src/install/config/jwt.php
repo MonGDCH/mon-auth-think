@@ -14,7 +14,7 @@ return [
     'configs' => [
         'admin' => [
             // 加密key
-            'key'       => '%s',
+            'key'       => env('AUTH_JWT_KEY', '%s'),
             // 加密算法
             'alg'       => 'HS256',
             // 签发单位

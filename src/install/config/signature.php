@@ -2,7 +2,7 @@
 
 return [
     // 默认加密盐
-    'salt'  => '%s',
+    'salt'  => env('AUTH_SIGNATURE_SALT', '%s'),
     // 字段映射
     'field' => [
         // app_id字段名
