@@ -24,6 +24,10 @@ return [
     'write_time'        => false,
     // 时间写入格式化
     'time_format'       => 'Y-m-d H:i:s',
+    // 创建时间字段名
+    'create_time'       => 'create_time',
+    // 更新时间字段名
+    'update_time'       => 'update_time',
     // 是否触发事件
     'trigger_event'     => false,
 ];

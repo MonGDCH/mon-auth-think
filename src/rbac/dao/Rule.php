@@ -39,13 +39,6 @@ class Rule extends Dao
     protected $autoWriteTimestamp = false;
 
     /**
-     * 自动写入时间戳格式，空则直接写入时间戳
-     *
-     * @var string
-     */
-    protected $autoTimeFormat = '';
-
-    /**
      * 构造方法
      *
      * @param Auth $auth Auth实例
@@ -56,6 +49,8 @@ class Rule extends Dao
         $this->table = $this->auth->getConfig('auth_rule');
         $this->autoWriteTimestamp = $this->auth->getConfig('write_time');
         $this->autoTimeFormat = $this->auth->getConfig('time_format');
+        $this->createTime = $this->auth->getConfig('create_time');
+        $this->updateTime = $this->auth->getConfig('update_time');
     }
 
     /**

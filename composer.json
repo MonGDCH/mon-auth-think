@@ -20,8 +20,8 @@
     ],
     "require": {
         "php": ">=7.4",
-        "mongdch/mon-util": "^1.3",
-        "mongdch/think-orm": "^1.0"
+        "mongdch/mon-util": "^1.3 || dev-master",
+        "mongdch/think-orm": "^1.0 || dev-master"
     },
     "autoload": {
         "psr-4": {

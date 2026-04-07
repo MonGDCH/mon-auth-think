@@ -15,9 +15,11 @@ composer require mongdch/mon-auth-think
 
 2. 如需使用RBAC库，则运行导入database目录下`rbac.sql`文件到数据库中。按需修改修改增加字段即可。
 
-3. 如需使用Mysql版本的`AccessToken`、`Signature`，则运行导入database目录下`api.sql`文件到数据库中，按需修改配置即可
+3. 如需使用Mysql版本的`AccessToken`库，则运行导入database目录下`access_token.sql`文件到数据库中。按需修改修改增加字段即可。
 
-4. `Gaia`框架使用则执行再运行一下脚本
+4. 如需使用Mysql版本的`Signature`库，则运行导入database目录下`signature.sql`文件到数据库中，按需修改配置即可
+
+5. `Gaia`框架使用则执行再运行一下脚本
 
 ```bash
 php gaia vendor:publish mon\auth
