@@ -112,7 +112,7 @@ class Auth
     public function getConfig($key = '')
     {
         if (!empty($key)) {
-            return $this->config[$key];
+            return $this->config[$key] ?? null;
         }
 
         return $this->config;
@@ -168,7 +168,7 @@ class Auth
         }
 
         // 触发rbac权限验证不通过事件
-        $this->triggerEvent($uid, $rule, 'faild', $diff, $relation);
+        $this->triggerEvent($uid, $rule, 'failed', $diff, $relation);
         return false;
     }
 
@@ -185,7 +185,7 @@ class Auth
         $dao = $this->getAccessDao();
         $roles = $dao->getUserRole($uid);
         foreach ($roles as $v) {
-            if (!$v || !trim($v['rules'], ',')) {
+            if (!$v || !trim((string) ($v['rules'] ?? ''), ',')) {
                 continue;
             }
             $ids = array_merge($ids, array_map('trim', explode(',', trim($v['rules'], ','))));

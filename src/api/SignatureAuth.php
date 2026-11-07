@@ -124,12 +124,13 @@ class SignatureAuth extends ApiAuth
             throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
         }
 
-        // 验证签名
+        // 验证签名（签名不匹配时驱动会直接抛出异常）
         $this->getDriver()->check($secret, $data);
 
         // 验证签名有效期
         $field = $this->getConfig('field');
-        if (time() > ($data[$field['timestamp']] + $this->getConfig('expire'))) {
+        $timestamp = isset($data[$field['timestamp']]) ? intval($data[$field['timestamp']]) : 0;
+        if ($timestamp <= 0 || time() > ($timestamp + $this->getConfig('expire'))) {
             throw new APIException('API签名已过期', APIException::SIGN_TIME_INVALID);
         }
 

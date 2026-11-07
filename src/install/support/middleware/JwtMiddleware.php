@@ -28,7 +28,7 @@ class JwtMiddleware implements Middlewareinterface
      */
     public function process(RequestInterface $request, Closure $callback): Response
     {
-        // 获取Token，优先的请求头中获取，不存在则从cookie中获取
+        // 获取Token，从请求头中获取
         $token = $this->getToken($request);
         if (!$token) {
             throw new JwtException('请先登录');
@@ -52,10 +52,13 @@ class JwtMiddleware implements Middlewareinterface
      */
     public function getToken(RequestInterface $request): string
     {
-        $token = $request->header('X-Authorization', '');
+        // 支持标准的 Authorization: Bearer <token>，兼容 X-Authorization 请求头
+        $token = $request->header('Authorization', '');
+        if (stripos($token, 'bearer ') === 0) {
+            $token = trim(substr($token, 7));
+        }
         if (!$token) {
-            // 请求头中没有token，从cookie中获取
-            $token = $request->cookie('X-Authorization', '');
+            $token = $request->header('X-Authorization', '');
         }
 
         return $token;

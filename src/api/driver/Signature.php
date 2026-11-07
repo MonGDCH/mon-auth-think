@@ -118,15 +118,16 @@ class Signature implements Driver
             throw new APIException('API签名不存在', APIException::SIGN_NOT_FOUND);
         }
         unset($data[$this->getField('signature')]);
-        // if ($sign != $this->getSign($data, $secret)) {
-        //     throw new APIException('API签名错误', APIException::SIGN_VERIFY_FAIL);
-        // }
-        $result = ($sign != $this->getSign($data, $secret));
+
+        // 验证签名有效性，签名不匹配直接拒绝
+        if ($sign !== $this->getSign($data, $secret)) {
+            throw new APIException('API签名错误', APIException::SIGN_VERIFY_FAIL);
+        }
 
         // 触发AccessToken验证事件，回调方法可通过 throw APIException 增加自定义的验证方式
         Event::instance()->trigger('sign_check', $data);
 
-        return $result;
+        return true;
     }
 
     /**

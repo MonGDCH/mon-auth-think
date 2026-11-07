@@ -22,8 +22,8 @@ class Auth
      * @var array
      */
     protected $config = [
-        // 加密key
-        'key'       => 'gAS!Qa)s^(&f*#654#~!@_+sdaw35',
+        // 加密key，必须显式配置，未配置时初始化将抛出异常
+        'key'       => '',
         // 加密算法
         'alg'       => 'HS256',
         // 默认签发单位
@@ -43,21 +43,25 @@ class Auth
      */
     public function __construct(array $config = [])
     {
-        if (!empty($config)) {
-            $this->init($config);
-        }
+        $this->init($config);
     }
 
     /**
      * 初始化方法
      *
      * @param array $config 配置信息
+     * @throws JwtException
      * @return Auth
      */
     public function init(array $config = []): Auth
     {
         if (!empty($config)) {
             $this->config = array_merge($this->config, $config);
+        }
+
+        // 校验加密key配置，避免空key或发布占位符被直接用于生产签名
+        if (empty($this->config['key']) || $this->config['key'] === '%s') {
+            throw new JwtException('JWT加密key未配置', JwtException::JWT_CONFIG_NOT_FOUND);
         }
 
         return $this;
@@ -141,7 +145,7 @@ class Auth
     public function getConfig($key = '')
     {
         if (!empty($key)) {
-            return $this->config[$key];
+            return $this->config[$key] ?? null;
         }
 
         return $this->config;

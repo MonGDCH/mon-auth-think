@@ -135,7 +135,7 @@ abstract class ApiAuth implements ApiAuthInterface
     public function getConfig(string $field = '')
     {
         if (!empty($field)) {
-            return $this->config[$field];
+            return $this->config[$field] ?? null;
         }
 
         return $this->config;

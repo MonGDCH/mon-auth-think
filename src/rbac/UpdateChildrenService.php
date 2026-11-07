@@ -46,6 +46,13 @@ class UpdateChildrenService
     protected $table = '';
 
     /**
+     * 树结构对象缓存（实例级，避免常驻内存进程下跨请求脏数据及跨表数据错乱）
+     *
+     * @var Tree|null
+     */
+    protected $tree;
+
+    /**
      * 构造方法
      *
      * @param string $table 操作表名
@@ -161,14 +168,13 @@ class UpdateChildrenService
      */
     public function getTree(): Tree
     {
-        static $tree = null;
-        if ($tree === null) {
+        if ($this->tree === null) {
             $data = Db::table($this->table)->select()->toArray();
             $sdk = new Tree(['id' => $this->id, 'pid' => $this->pid]);
-            $tree = $sdk->data($data);
+            $this->tree = $sdk->data($data);
         }
 
-        return $tree;
+        return $this->tree;
     }
 
     /**

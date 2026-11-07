@@ -28,11 +28,5 @@
             "mon\\auth\\": "src"
         },
         "files": []
-    },
-    "repositories": {
-        "packagist": {
-            "type": "composer",
-            "url": "https://packagist.org/"
-        }
     }
 }

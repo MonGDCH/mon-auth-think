@@ -102,7 +102,7 @@ class SignatureService
      */
     public function check(string $secret, array $data): bool
     {
-        return $this->getService()->check($secret, $data);;
+        return $this->getService()->check($secret, $data);
     }
 
     /**
@@ -114,7 +114,7 @@ class SignatureService
      */
     public function checkToken(array $data): bool
     {
-        return $this->getService()->checkToken($data);;
+        return $this->getService()->checkToken($data);
     }
 
     /**
@@ -125,10 +125,11 @@ class SignatureService
      */
     protected function parseConfig(array $config): array
     {
-        if ($config['dao']['driver'] == DatabaseDao::class && is_string($config['dao']['construct']['config'])) {
+        $daoConstruct = $config['dao']['construct'] ?? [];
+        $dbConfigKey = $daoConstruct['config'] ?? null;
+        if (($config['dao']['driver'] ?? null) == DatabaseDao::class && is_string($dbConfigKey)) {
             // 数据库dao驱动，字符串类型的数据库链接配置
-            $dbconfig = Config::instance()->get('database.' . $config['dao']['construct']['config'], []);
-            $config['dao']['construct']['config'] = $dbconfig;
+            $config['dao']['construct']['config'] = Config::instance()->get('database.' . $dbConfigKey, []);
         }
 
         return $config;

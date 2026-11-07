@@ -166,16 +166,23 @@ class AccessToken implements Driver
     {
         // 获取token数据
         $data = $this->parse($token, $secret);
+        // 校验必要字段是否存在
+        $appField = $this->getField('app_id');
+        $expireField = $this->getField('expire');
+        $ipField = $this->getField('ip');
+        if (!isset($data[$appField], $data[$expireField], $data[$ipField])) {
+            throw new ApiException('无效的AccessToken数据', ApiException::ACCESS_TOKEN_ERROR);
+        }
         // 校验APP_id
-        if ($app_id != $data[$this->getField('app_id')]) {
+        if ($app_id != $data[$appField]) {
             throw new ApiException('AppID不匹配', ApiException::ACCESS_TOKEN_FAILD);
         }
         // 校验有效期
-        if (time() > $data[$this->getField('expire')]) {
+        if (time() > $data[$expireField]) {
             throw new ApiException('Token已过期', ApiException::ACCESS_TOKEN_INVALID);
         }
         // 验证授权IP
-        if ($ip != $data[$this->getField('ip')]) {
+        if ($ip != $data[$ipField]) {
             throw new ApiException('Token授权IP无效', ApiException::ACCESS_TOKEN_INVALID);
         }
 

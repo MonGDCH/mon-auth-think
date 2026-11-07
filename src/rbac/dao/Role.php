@@ -87,7 +87,7 @@ class Role extends Dao
             }
 
             // 比对规则，判断是否越权
-            $parentRules = explode(',', $parentInfo['rules']);
+            $parentRules = explode(',', (string) $parentInfo['rules']);
             sort($parentRules);
             if ($this->isUltraVires($parentRules, $rules)) {
                 throw new RbacDaoException('新增角色失败： 角色权限存在越权父级角色，请检查权限');
@@ -148,11 +148,15 @@ class Role extends Dao
         // 是否需要更新pids
         $updatePids = $info['pid'] != $pid;
 
-        // 修改父级角色。存在父级角色，子级角色权限规则必须包含在父级权限规则中
-        if ($pid > 0 && $updatePids) {
+        // 存在父级角色时，无论是否修改父级，均需校验：父级存在、父级状态、子级权限不可越出父级权限范围、不可形成循环层级
+        if ($pid > 0) {
             $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'rules', 'status'])->get();
             if (!$parentInfo) {
                 throw new RbacDaoException('修改角色信息失败： 父级权限角色不存在');
+            }
+            // 禁止将角色挂到自己或自己的后代角色下，避免形成循环层级
+            if ($pid == $idx || in_array($idx, explode(',', (string) $parentInfo['pids']))) {
+                throw new RbacDaoException('修改角色信息失败： 父级角色不能是自己或自己的后代角色');
             }
             // 比较状态
             $invalid_status = $this->auth->getConfig('invalid_status');
@@ -160,15 +164,17 @@ class Role extends Dao
                 throw new RbacDaoException('修改角色信息失败： 父级权限角色为不可用状态下，子级角色必须为不可用状态');
             }
 
-            // 判断是否修改了规则或者修改了父级
-            $parentRules = explode(',', $parentInfo['rules']);
+            // 比对规则，判断是否越权
+            $parentRules = explode(',', (string) $parentInfo['rules']);
             sort($parentRules);
-            // 比对规则
             if ($this->isUltraVires($parentRules, $rules)) {
                 throw new RbacDaoException('修改角色信息失败： 角色权限存在越权父级角色，请检查权限');
             }
 
-            $pids = $parentInfo['pids'] . ',' . $pid;
+            // 修改了父级角色时，需要更新pids
+            if ($updatePids) {
+                $pids = $parentInfo['pids'] . ',' . $pid;
+            }
         }
 
         // 更新后代数据

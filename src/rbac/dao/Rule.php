@@ -129,11 +129,15 @@ class Rule extends Dao
         $updateChildrenInvalidStatus = $ruleInfo['status'] != $status && $status == $this->auth->getConfig('invalid_status');
         // 是否需要更新pids
         $updatePids = $ruleInfo['pid'] != $pid;
-        // 存在父级规则，并且修改了父级规则，判断父级状态及获取父级pids
-        if ($pid > 0 && $updatePids) {
+        // 存在父级规则时，无论是否修改父级，均需校验：父级存在、父级状态、不可形成循环层级
+        if ($pid > 0) {
             $parentInfo = $this->where('id', $pid)->field(['id', 'pid', 'pids', 'status'])->get();
             if (!$parentInfo) {
                 throw new RbacDaoException('修改权限规则失败： 父级权限规则不存在');
+            }
+            // 禁止将规则挂到自己或自己的后代规则下，避免形成循环层级
+            if ($pid == $idx || in_array($idx, explode(',', (string) $parentInfo['pids']))) {
+                throw new RbacDaoException('修改权限规则失败： 父级规则不能是自己或自己的后代规则');
             }
             // 比较状态
             $invalid_status = $this->auth->getConfig('invalid_status');
@@ -141,7 +145,10 @@ class Rule extends Dao
                 throw new RbacDaoException('修改权限规则失败： 父级权限规则为不可用状态下，子级规则必须为不可用状态');
             }
 
-            $pids = $parentInfo['pids'] . ',' . $pid;
+            // 修改了父级规则时，需要更新pids
+            if ($updatePids) {
+                $pids = $parentInfo['pids'] . ',' . $pid;
+            }
         }
 
         // 更新数据

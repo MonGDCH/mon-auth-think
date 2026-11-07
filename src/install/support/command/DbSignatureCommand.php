@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `%s` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ApiSignature授权表';
 SQL;
     // 表名
-    $table = Config::instance()->get('auth.signature.dao.construct.table', 'api_signs');
+    $table = Config::instance()->get('auth.signature.dao.construct.table', 'api_sign');
     // 建表sql
     $sql = sprintf($content, $table);
     // 建表
