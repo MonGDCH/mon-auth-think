@@ -43,6 +43,11 @@ class APIException extends AuthException
     const SIGN_TIME_INVALID = 40220;
 
     /**
+     * 签名重复提交（nonce重放）
+     */
+    const SIGN_REPLAY = 40230;
+
+    /**
      * APPID不存在
      */
     const APPID_NOT_FOUND = 40300;

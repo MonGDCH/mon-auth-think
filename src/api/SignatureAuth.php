@@ -7,6 +7,7 @@ namespace mon\auth\api;
 use mon\util\Instance;
 use mon\auth\api\driver\Signature;
 use mon\auth\exception\APIException;
+use mon\auth\api\contract\NonceStore;
 
 /**
  * API签名权限控制
@@ -41,6 +42,8 @@ class SignatureAuth extends ApiAuth
         ],
         // 有效时间，单位秒
         'expire'    => 3600,
+        // 签名nonce防重放存储，null=关闭（兼容旧行为），需实现 mon\auth\api\contract\NonceStore
+        'nonce_store'   => null,
         // 数据源配置
         'dao'      => [
             // 驱动，默认数组驱动
@@ -132,6 +135,18 @@ class SignatureAuth extends ApiAuth
         $timestamp = isset($data[$field['timestamp']]) ? intval($data[$field['timestamp']]) : 0;
         if ($timestamp <= 0 || time() > ($timestamp + $this->getConfig('expire'))) {
             throw new APIException('API签名已过期', APIException::SIGN_TIME_INVALID);
+        }
+
+        // 验证nonce防重放（配置了nonce_store时启用），顺序：先验签和有效期，再占位nonce，避免非法请求灌爆存储
+        $store = $this->getConfig('nonce_store');
+        if (!is_null($store)) {
+            if (!$store instanceof NonceStore) {
+                throw new APIException('nonce_store配置必须实现 NonceStore 契约', APIException::DAO_NOT_SUPPORT);
+            }
+            $nonce = isset($data[$field['noncestr']]) ? strval($data[$field['noncestr']]) : '';
+            if ($nonce === '' || !$store->put(strval($data[$field['app_id']]), $nonce, $this->getConfig('expire'))) {
+                throw new APIException('API签名重复提交', APIException::SIGN_REPLAY);
+            }
         }
 
         return true;
