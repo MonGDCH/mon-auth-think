@@ -77,4 +77,56 @@ class AccessTokenAuthTest extends TestCase
         $this->expectExceptionCode(APIException::APPID_STATUS_ERROR);
         $auth->createToken('APP001', '127.0.0.1');
     }
+
+    public function testDefaultIssueFormatIsGcm(): void
+    {
+        $auth = $this->auth();
+        $token = $auth->createToken('APP001', '127.0.0.1');
+        $this->assertStringStartsWith(\mon\auth\api\driver\AccessToken::TOKEN_PREFIX, $token);
+    }
+
+    public function testLegacyFormatConfigEndToEnd(): void
+    {
+        $auth = new AccessTokenAuth([
+            'salt'  => 'test_salt',
+            'expire'    => 60,
+            'token_format'  => 'nbed64',
+            'legacy_parse'  => true,
+            'dao' => [
+                'driver'    => \mon\auth\api\dao\ArrayDao::class,
+                'construct' => [
+                    'data' => [
+                        ['app_id' => 'APP001', 'secret' => 'secret456', 'name' => 't', 'status' => 1, 'expired_time' => ''],
+                    ],
+                ],
+            ],
+        ]);
+
+        $token = $auth->createToken('APP001', '127.0.0.1');
+        $this->assertStringStartsNotWith(\mon\auth\api\driver\AccessToken::TOKEN_PREFIX, $token);
+        $data = $auth->getTokenData($token, 'APP001', '127.0.0.1');
+        $this->assertSame('APP001', $data['app_id']);
+    }
+
+    public function testGcmConfigEndToEnd(): void
+    {
+        $auth = new AccessTokenAuth([
+            'salt'  => 'test_salt',
+            'expire'    => 60,
+            'token_format'  => 'gcm',
+            'legacy_parse'  => true,
+            'dao' => [
+                'driver'    => \mon\auth\api\dao\ArrayDao::class,
+                'construct' => [
+                    'data' => [
+                        ['app_id' => 'APP001', 'secret' => 'secret456', 'name' => 't', 'status' => 1, 'expired_time' => ''],
+                    ],
+                ],
+            ],
+        ]);
+
+        $token = $auth->createToken('APP001', '127.0.0.1', ['scope' => 'api']);
+        $data = $auth->getTokenData($token, 'APP001', '127.0.0.1');
+        $this->assertSame('api', $data['scope']);
+    }
 }

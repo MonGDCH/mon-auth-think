@@ -14,6 +14,10 @@ return [
     ],
     // 有效时间，单位秒
     'expire'    => 7200,
+    // Token签发格式：gcm=AES-256-GCM认证加密（推荐），nbed64=旧版自研加密
+    'token_format'  => 'gcm',
+    // 兼容解析旧版格式token（迁移期双读，确认存量token全部过期后可关闭）
+    'legacy_parse'  => true,
     // 数据源配置
     'dao'      => [
         // 驱动，默认数组驱动

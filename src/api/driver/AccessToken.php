@@ -21,11 +21,40 @@ class AccessToken implements Driver
     use Instance;
 
     /**
+     * 新版token格式标识前缀（AES-256-GCM），点号不在base64字符集内，可作为可靠的格式标识
+     */
+    const TOKEN_PREFIX = 'v2.';
+
+    /**
+     * Token格式：AES-256-GCM认证加密（推荐）
+     */
+    const FORMAT_GCM = 'gcm';
+
+    /**
+     * Token格式：旧版Nbed64自研加密
+     */
+    const FORMAT_LEGACY = 'nbed64';
+
+    /**
      * 内置的加密盐
      *
      * @var string
      */
     protected $encrypt_salt = 'a!a05kh(g#-$%iu_ow1.08';
+
+    /**
+     * Token格式，默认签发AES-256-GCM格式
+     *
+     * @var string
+     */
+    protected $format = self::FORMAT_GCM;
+
+    /**
+     * 是否兼容解析旧版Nbed64格式token（迁移期双读，确认存量token全部过期后可关闭）
+     *
+     * @var boolean
+     */
+    protected $legacy_parse = true;
 
     /**
      * 字段名映射
@@ -44,13 +73,68 @@ class AccessToken implements Driver
     /**
      * 构造方法
      *
-     * @param string $salt
-     * @param array $field_map
+     * @param string $salt      加密盐
+     * @param array  $field_map 字段名映射
+     * @param array  $options   额外选项：format（token格式，默认gcm）、legacy_parse（兼容解析旧格式，默认true）
      */
-    public function __construct(string $salt = 'a!a05kh(g#-$%iu_ow1.08', array $field_map = [])
+    public function __construct(string $salt = 'a!a05kh(g#-$%iu_ow1.08', array $field_map = [], array $options = [])
     {
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
+        if (isset($options['format'])) {
+            $this->setFormat($options['format']);
+        }
+        if (isset($options['legacy_parse'])) {
+            $this->legacy_parse = (bool) $options['legacy_parse'];
+        }
+    }
+
+    /**
+     * 获取Token格式
+     *
+     * @return string
+     */
+    public function getFormat(): string
+    {
+        return $this->format;
+    }
+
+    /**
+     * 设置Token签发格式
+     *
+     * @param string $format 支持AccessToken::FORMAT_GCM、AccessToken::FORMAT_LEGACY
+     * @throws ApiException 不支持的格式
+     * @return AccessToken
+     */
+    public function setFormat(string $format): AccessToken
+    {
+        if (!in_array($format, [self::FORMAT_GCM, self::FORMAT_LEGACY], true)) {
+            throw new ApiException('不支持的AccessToken格式', ApiException::DAO_NOT_SUPPORT);
+        }
+        $this->format = $format;
+        return $this;
+    }
+
+    /**
+    * 获取是否兼容解析旧格式token
+     *
+     * @return boolean
+     */
+    public function getLegacyParse(): bool
+    {
+        return $this->legacy_parse;
+    }
+
+    /**
+     * 设置是否兼容解析旧格式token
+     *
+     * @param boolean $legacy_parse
+     * @return AccessToken
+     */
+    public function setLegacyParse(bool $legacy_parse): AccessToken
+    {
+        $this->legacy_parse = $legacy_parse;
+        return $this;
     }
 
     /**
@@ -122,11 +206,19 @@ class AccessToken implements Driver
         ]);
         $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
-        return Nbed64::stringEncrypt($json, $encrypt_salt);
+        // 旧版格式
+        if ($this->format === self::FORMAT_LEGACY) {
+            return Nbed64::stringEncrypt($json, $encrypt_salt);
+        }
+
+        // 新版格式：AES-256-GCM认证加密
+        return $this->encryptGCM($json, $encrypt_salt);
     }
 
     /**
      * 解析AccessToken数据
+     *
+     * 根据token前缀自动识别格式：v2.前缀为AES-256-GCM格式，其余按旧版Nbed64格式解析（需开启legacy_parse）
      *
      * @param string $token token
      * @param string $salt  应用秘钥
@@ -137,6 +229,16 @@ class AccessToken implements Driver
     {
         // 盐
         $encrypt_salt = $this->getEncryptSalt($secret);
+
+        // 新版格式
+        if (strpos($token, self::TOKEN_PREFIX) === 0) {
+            return $this->decryptGCM($token, $encrypt_salt);
+        }
+
+        // 旧版格式
+        if (!$this->legacy_parse) {
+            throw new ApiException('不支持的AccessToken格式', ApiException::ACCESS_TOKEN_ERROR);
+        }
         // 解析token数据
         $json = Nbed64::stringDecrypt($token, $encrypt_salt);
         // 修正解密后输出的JON格式错误：存在零宽的控制符(Control character error)
@@ -150,6 +252,87 @@ class AccessToken implements Driver
         }
 
         return $data;
+    }
+
+    /**
+     * AES-256-GCM加密token数据
+     *
+     * @param  string $json         json数据
+     * @param  string $encrypt_salt 加密盐
+     * @throws ApiException openssl失败时抛出
+     * @return string v2.前缀的base64url(iv.tag.cipher)
+     */
+    protected function encryptGCM(string $json, string $encrypt_salt): string
+    {
+        // AES-256-GCM需要32字节密钥，由加盐派生
+        $key = hash('sha256', $encrypt_salt, true);
+        $iv = random_bytes(12);
+        $tag = '';
+        $cipher = openssl_encrypt($json, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+        if ($cipher === false) {
+            throw new ApiException('AccessToken加密失败', ApiException::OPENSSL_ERROR);
+        }
+
+        return self::TOKEN_PREFIX . $this->b64urlEncode($iv . $tag . $cipher);
+    }
+
+    /**
+     * AES-256-GCM解密token数据，GCM tag自动校验完整性，任何篡改直接失败
+     *
+     * @param  string $token        v2.前缀的token
+     * @param  string $encrypt_salt 加密盐
+     * @throws ApiException
+     * @return array
+     */
+    protected function decryptGCM(string $token, string $encrypt_salt): array
+    {
+        $raw = $this->b64urlDecode(substr($token, strlen(self::TOKEN_PREFIX)));
+        // 结构长度校验：iv(12) + tag(16) + 密文(>=1)
+        if ($raw === false || strlen($raw) < 29) {
+            throw new ApiException('无效的AccessToken!', ApiException::ACCESS_TOKEN_ERROR);
+        }
+
+        $key = hash('sha256', $encrypt_salt, true);
+        $iv = substr($raw, 0, 12);
+        $tag = substr($raw, 12, 16);
+        $cipher = substr($raw, 28);
+        $json = openssl_decrypt($cipher, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+        if ($json === false) {
+            throw new ApiException('无效的AccessToken!', ApiException::ACCESS_TOKEN_ERROR);
+        }
+        $data = json_decode($json, true);
+        if (json_last_error()) {
+            throw new ApiException('无效的AccessToken! ' . json_last_error_msg(), ApiException::ACCESS_TOKEN_ERROR);
+        }
+
+        return $data;
+    }
+
+    /**
+     * base64url编码
+     *
+     * @param  string $data
+     * @return string
+     */
+    protected function b64urlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    /**
+     * base64url解码
+     *
+     * @param  string $data
+     * @return string|false
+     */
+    protected function b64urlDecode(string $data)
+    {
+        $remainder = strlen($data) % 4;
+        if ($remainder) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+
+        return base64_decode(strtr($data, '-_', '+/'), true);
     }
 
     /**

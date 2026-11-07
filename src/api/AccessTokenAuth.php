@@ -37,6 +37,10 @@ class AccessTokenAuth extends ApiAuth
         'expire'    => 7200,
         // 默认加密盐
         'salt'      => 'a!khg#-$%iu_ow1.08',
+        // Token签发格式：gcm=AES-256-GCM认证加密（推荐），nbed64=旧版自研加密
+        'token_format'  => 'gcm',
+        // 兼容解析旧版格式token（迁移期双读，确认存量token全部过期后可关闭）
+        'legacy_parse'  => true,
         // 数据源配置
         'dao'      => [
             // 驱动，默认数组驱动
@@ -154,6 +158,9 @@ class AccessTokenAuth extends ApiAuth
     protected function initDriver()
     {
         // 获取AccessToken实例
-        $this->driver = new AccessToken($this->getConfig('salt'), $this->getConfig('field'));
+        $this->driver = new AccessToken($this->getConfig('salt'), $this->getConfig('field'), [
+            'format'        => $this->getConfig('token_format'),
+            'legacy_parse'  => $this->getConfig('legacy_parse'),
+        ]);
     }
 }
