@@ -30,6 +30,11 @@ class ApiException extends AuthException
     const ACCESS_TOKEN_FAILD = 40120;
 
     /**
+     * AccessToken数据编码失败（如扩展数据含非法UTF-8）
+     */
+    const ACCESS_TOKEN_ENCODE_ERROR = 40130;
+
+    /**
      * 签名字段不存在
      */
     const SIGN_NOT_FOUND = 40200;

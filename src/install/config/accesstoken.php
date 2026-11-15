@@ -2,6 +2,8 @@
 
 return [
     // 默认加密盐
+    // 注意：默认值占位符由 vendor:publish 替换为随机盐，若未替换（手工复制模板/发布失败）初始化会直接抛异常，
+    //      也可直接通过环境变量 AUTH_ACCESS_TOKEN_SALT 指定
     'salt'      => env('AUTH_ACCESS_TOKEN_SALT', '%s'),
     // 字段映射
     'field'     => [

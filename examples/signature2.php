@@ -1,63 +1,73 @@
 <?php
 
+/**
+ * Signature 签名校验（DatabaseDao 数据源，需要数据库）
+ */
+
 use mon\auth\api\SignatureAuth;
+use mon\auth\api\nonce\RedisNonceStore;
+use mon\auth\exception\ApiException;
+use mon\thinkORM\Db;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-
-SignatureAuth::instance()->init([
-    // 数据源配置
-    'dao'      => [
-        // 驱动，默认数组驱动
-        'driver'    => \mon\auth\api\dao\DatabaseDao::class,
-        // 构造方法传入参数
-        'construct'    => [
-            // 数据库驱动操作表，驱动为 DatabaseDao 时有效
-            'table'     => 'api_sign',
-            // 数据库链接配置，驱动为 DatabaseDao 时有效
-            'config'    => [
-                // 数据库类型，只支持mysql
-                'type'          => 'mysql',
-                // 服务器地址
-                'host'          => '127.0.0.1',
-                // 数据库名
-                'database'      => 'test',
-                // 用户名
-                'username'      => 'root',
-                // 密码
-                'password'      => '123456',
-                // 端口
-                'port'          => '3306',
-                // 数据库连接参数
-                'params'        => [],
-                // 数据库编码默认采用utf8
-                'charset'       => 'utf8mb4',
-                // 返回结果集类型
-                'result_type'   => \PDO::FETCH_ASSOC,
-                // 是否开启读写分离
-                'rw_separate'   => false,
-                // 查询数据库连接配置，二维数组随机获取节点覆盖默认配置信息
-                'read'          => [],
-                // 写入数据库连接配置，同上，开启事务后，读取不会调用查询数据库配置
-                'write'         => []
-            ]
-        ]
-    ]
+Db::setConfig([
+    // 默认数据连接标识
+    'default' => 'mysql',
+    // 数据库连接信息
+    'connections' => [
+        'mysql' => [
+            'type'            => 'mysql',
+            'hostname'        => '127.0.0.1',
+            'database'        => 'test',
+            'username'        => 'root',
+            'password'        => '123456',
+            'hostport'        => '3306',
+            'params'          => [\PDO::ATTR_TIMEOUT => 3],
+            'charset'         => 'utf8mb4',
+            'prefix'          => '',
+            'deploy'          => 0,
+            'rw_separate'     => false,
+            'master_num'      => 1,
+            'slave_no'        => '',
+            'fields_strict'   => true,
+            'auto_timestamp'  => false,
+            'datetime_format' => false,
+            'break_reconnect' => true,
+            'fields_cache'    => false,
+            // 常驻进程下开启SQL监听务必注入日志对象，否则会持续占用内存
+            'trigger_sql'     => false,
+            'query'           => \mon\thinkORM\extend\Query::class,
+        ],
+    ],
 ]);
 
-
-$appid = 'TEST123456789';
-
-$data = [
-    'a' => 1,
-    'b' => 'asd',
-    'c' => true,
+$config = [
+    // 加密盐，必须显式配置
+    'salt'   => 'please-change-me-a-random-salt',
+    // 签名算法
+    'alg'    => 'hmac-sha256',
+    // 有效期（秒）
+    'expire' => 3600,
+    // 数据源：数据库驱动
+    'dao'    => [
+        'driver'    => \mon\auth\api\dao\DatabaseDao::class,
+        'construct' => [
+            'table' => 'api_sign',
+        ],
+    ],
 ];
 
-$tokenData = SignatureAuth::instance()->createToken($appid, $data);
+// 可选：启用nonce防重放（需注入Redis客户端实例）
+// $config['nonce_store'] = new RedisNonceStore(new \Redis(), 'auth:nonce:');
 
-dd($tokenData);
+$auth = SignatureAuth::newInstance($config);
 
+try {
+    $tokenData = $auth->createToken('TEST123456789', ['a' => 1, 'b' => 'asd']);
+    var_dump($tokenData);
 
-$check = SignatureAuth::instance()->checkToken($tokenData);
-dd($check);
+    var_dump($auth->checkToken($tokenData));
+} catch (ApiException $e) {
+    var_dump('[error] ' . $e->getMessage() . ' code: ' . $e->getCode());
+}

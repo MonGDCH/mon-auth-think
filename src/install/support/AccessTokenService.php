@@ -43,13 +43,15 @@ class AccessTokenService
     /**
      * 注册配置信息
      *
+     * 增量覆盖配置文件中的同名配置项，避免只传入局部配置时丢失盐等配置
+     *
      * @param array $config 配置信息
      * @return AccessTokenService
      */
     public function register(array $config): AccessTokenService
     {
         $config = $this->parseConfig($config);
-        $this->getService()->init($config);
+        $this->getService()->setConfig($config);
         return $this;
     }
 

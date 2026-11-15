@@ -8,6 +8,7 @@ use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacDaoException;
 use mon\auth\rbac\UpdateChildrenService;
+use mon\auth\rbac\dao\concern\FreshValidator;
 
 /**
  * 权限规则表
@@ -17,6 +18,8 @@ use mon\auth\rbac\UpdateChildrenService;
  */
 class Rule extends Dao
 {
+    use FreshValidator;
+
     /**
      * Auth实例
      *
@@ -183,7 +186,8 @@ class Rule extends Dao
             if ($updateChildrenInvalidStatus || $updatePids) {
                 // 更新pid，需要更新所有后代的pids
                 if ($updatePids) {
-                    $sdk = new UpdateChildrenService($this->table);
+                    // 传入Dao的连接配置，保证与当前事务在同一连接内执行
+                    $sdk = new UpdateChildrenService($this->table, 'id', 'pid', 'pids', $this->getConnection());
                     // 判断是否需要更新状态为无效，更新后代pids信息
                     $save = $updateChildrenInvalidStatus ? $sdk->updateChildrenPidsAndStatus($idx, $pids, $status) : $sdk->updateChildrenPids($idx, $pids);
                 } else {

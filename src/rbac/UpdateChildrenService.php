@@ -7,8 +7,8 @@ namespace mon\auth\rbac;
 use Throwable;
 use mon\util\Tree;
 use mon\thinkORM\Db;
-use mon\auth\exception\RbacDaoException;
 use mon\auth\exception\RbacException;
+use mon\auth\exception\RbacDaoException;
 
 /**
  * 批量更新所有后代数据服务
@@ -47,6 +47,15 @@ class UpdateChildrenService
     protected $table = '';
 
     /**
+     * 数据库连接配置节点
+     *
+     * 必须与 Dao 使用的连接一致，否则事务与批量更新会落在不同连接上
+     *
+     * @var string
+     */
+    protected $connection = '';
+
+    /**
      * 树结构对象缓存（实例级，避免常驻内存进程下跨请求脏数据及跨表数据错乱）
      *
      * @var Tree|null
@@ -60,13 +69,27 @@ class UpdateChildrenService
      * @param string $id ID字段名
      * @param string $pid pid字段名
      * @param string $pids pid链表字段名
+     * @param string $connection 数据库连接配置节点，同 Dao 的 connection 配置
      */
-    public function __construct(string $table, string $id = 'id', string $pid = 'pid', string $pids = 'pids')
+    public function __construct(string $table, string $id = 'id', string $pid = 'pid', string $pids = 'pids', string $connection = '')
     {
         $this->table = $table;
         $this->id = $id;
         $this->pid = $pid;
         $this->pids = $pids;
+        $this->connection = $connection;
+    }
+
+    /**
+     * 获取数据库连接
+     *
+     * 指定连接时所有查询与事务都在该连接上执行，避免与调用方的事务不在同一连接导致数据不一致
+     *
+     * @return \think\db\PDOConnection
+     */
+    protected function connect()
+    {
+        return Db::connect($this->connection === '' ? null : $this->connection);
     }
 
     /**
@@ -79,17 +102,17 @@ class UpdateChildrenService
      */
     public function updatePids(int $nodeId, int $newParentId): bool
     {
-        Db::startTrans();
+        $this->connect()->startTrans();
         try {
             // 获取父节点的 pids（加锁读取，防止并发移动同一父级节点时pids链错乱）
-            $parent = Db::table($this->table)->field([$this->id, $this->pid, $this->pids])->where($this->id, $newParentId)->lock(true)->find();
+            $parent = $this->connect()->table($this->table)->field([$this->id, $this->pid, $this->pids])->where($this->id, $newParentId)->lock(true)->find();
             if (!$parent) {
                 throw new RbacException("父节点ID({$newParentId})不存在");
             }
             $parentPids = $parent[$this->pids] . ',' . $newParentId;
 
             // 更新当前节点的 pid 和 pids
-            $save = Db::table($this->table)->where($this->id, $nodeId)->update([
+            $save = $this->connect()->table($this->table)->where($this->id, $nodeId)->update([
                 $this->pid => $newParentId,
                 $this->pids => $parentPids
             ]);
@@ -100,10 +123,10 @@ class UpdateChildrenService
             // 递归获取所有后代节点并更新其 pids
             $this->updateChildrenPids($nodeId, $parentPids);
 
-            Db::commit();
+            $this->connect()->commit();
             return true;
         } catch (Throwable $e) {
-            Db::rollback();
+            $this->connect()->rollback();
             throw $e;
         }
     }
@@ -124,7 +147,7 @@ class UpdateChildrenService
         // 批量更新后代节点的 pids
         if (!empty($descendants)) {
             $sql = $this->batchUpdateSql($descendants);
-            $save = Db::execute($sql);
+            $save = $this->connect()->execute($sql);
             if (!$save) {
                 throw new RbacException("批量更新后代节点的 {$this->pids} 字段失败");
             }
@@ -153,7 +176,7 @@ class UpdateChildrenService
         // 批量更新后代节点的 pids
         if (!empty($descendants)) {
             $sql = $this->batchUpdateSql($descendants);
-            $save = Db::execute($sql);
+            $save = $this->connect()->execute($sql);
             if (!$save) {
                 throw new RbacException("批量更新后代节点失败");
             }
@@ -170,7 +193,7 @@ class UpdateChildrenService
     public function getTree(): Tree
     {
         if ($this->tree === null) {
-            $data = Db::table($this->table)->select()->toArray();
+            $data = $this->connect()->table($this->table)->select()->toArray();
             // 脏数据兜底：pids与pid不一致或历史数据存在环路时，Tree的getChildren/getParents
             // 会无限递归导致worker内存耗尽或CPU 100%挂死，构建前必须检测
             if (TreeGuard::hasCycle($data, $this->id, $this->pid)) {

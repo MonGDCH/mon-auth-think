@@ -43,13 +43,15 @@ class SignatureService
     /**
      * 注册配置信息
      *
+     * 增量覆盖配置文件中的同名配置项，避免只传入局部配置（如运行期注入 nonce_store）时丢失盐等配置
+     *
      * @param array $config 配置信息
      * @return SignatureService
      */
     public function register(array $config): SignatureService
     {
         $config = $this->parseConfig($config);
-        $this->getService()->init($config);
+        $this->getService()->setConfig($config);
         return $this;
     }
 

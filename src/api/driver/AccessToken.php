@@ -9,6 +9,7 @@ use mon\util\Nbed64;
 use mon\util\Instance;
 use mon\auth\api\contract\Driver;
 use mon\auth\exception\ApiException;
+use mon\auth\api\concern\SaltGuard;
 
 /**
  * 接口 AccessToken 权限控制
@@ -79,10 +80,8 @@ class AccessToken implements Driver
      */
     public function __construct(string $salt = '', array $field_map = [], array $options = [])
     {
-        // 盐为空时直接拒绝初始化，防止无盐Token上线
-        if ($salt === '') {
-            throw new ApiException('未配置有效的AccessToken加密盐', ApiException::AUTH_INIT_ERROR);
-        }
+        // 盐为空或仍为配置模板占位符时直接拒绝初始化，防止无盐/弱密钥Token上线
+        SaltGuard::assert($salt, 'AccessToken');
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
         if (isset($options['format'])) {
@@ -159,11 +158,27 @@ class AccessToken implements Driver
      */
     public function setSalt(string $salt): AccessToken
     {
-        if ($salt === '') {
-            throw new ApiException('未配置有效的AccessToken加密盐', ApiException::AUTH_INIT_ERROR);
-        }
+        SaltGuard::assert($salt, 'AccessToken');
         $this->encrypt_salt = $salt;
         return $this;
+    }
+
+    /**
+     * 获取单例实例
+     *
+     * 带参数调用时返回新实例：加密盐与格式是实例级状态，若沿用单例会静默忽略后续参数，
+     * 常驻进程内就会一直使用首次传入的盐与格式。
+     *
+     * @param mixed ...$args 构造参数(salt, field_map, options)
+     * @return static
+     */
+    public static function instance(...$args)
+    {
+        if (!empty($args)) {
+            return new static(...$args);
+        }
+
+        return static::createInstance([]);
     }
 
     /**
@@ -212,6 +227,10 @@ class AccessToken implements Driver
             $this->getField('ip') => $ip
         ]);
         $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+        // 扩展数据包含非法UTF-8等内容时 json_encode 返回 false，直接传入加密函数会触发 TypeError
+        if ($json === false) {
+            throw new ApiException('AccessToken数据编码失败，请检查数据是否包含非法字符', ApiException::ACCESS_TOKEN_ENCODE_ERROR);
+        }
 
         // 旧版格式
         if ($this->format === self::FORMAT_LEGACY) {
@@ -363,16 +382,17 @@ class AccessToken implements Driver
         if (!isset($data[$appField], $data[$expireField], $data[$ipField])) {
             throw new ApiException('无效的AccessToken数据', ApiException::ACCESS_TOKEN_ERROR);
         }
-        // 校验APP_id
-        if ($app_id != $data[$appField]) {
+        // 校验APP_id（严格比较：松散比较下 '0e123' 与 '0e456' 会被当作数值相等，导致跨应用通过校验）
+        if ((string) $data[$appField] !== $app_id) {
             throw new ApiException('AppID不匹配', ApiException::ACCESS_TOKEN_FAILD);
         }
         // 校验有效期
-        if (time() > $data[$expireField]) {
+        if (time() > (int) $data[$expireField]) {
             throw new ApiException('Token已过期', ApiException::ACCESS_TOKEN_INVALID);
         }
-        // 验证授权IP
-        if ($ip != $data[$ipField]) {
+        // 验证授权IP：签发时ip为空表示不绑定IP，绑定后必须与请求IP严格一致
+        $bindIp = (string) $data[$ipField];
+        if ($bindIp !== '' && $bindIp !== $ip) {
             throw new ApiException('Token授权IP无效', ApiException::ACCESS_TOKEN_INVALID);
         }
 

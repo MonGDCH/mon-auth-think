@@ -7,6 +7,7 @@ namespace mon\auth\api\driver;
 use mon\util\Event;
 use mon\util\Instance;
 use mon\auth\api\contract\Driver;
+use mon\auth\api\concern\SaltGuard;
 use mon\auth\exception\ApiException;
 
 /**
@@ -67,10 +68,8 @@ class Signature implements Driver
      */
     public function __construct(string $salt = '', array $field_map = [], array $options = [])
     {
-        // 盐为空时直接拒绝初始化，防止无盐签名上线
-        if ($salt === '') {
-            throw new ApiException('未配置有效的Signature加密盐', ApiException::AUTH_INIT_ERROR);
-        }
+        // 盐为空或仍为配置模板占位符时直接拒绝初始化，防止无盐/弱密钥签名上线
+        SaltGuard::assert($salt, 'Signature');
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
         if (isset($options['alg'])) {
@@ -79,6 +78,24 @@ class Signature implements Driver
         if (isset($options['accept_legacy'])) {
             $this->accept_legacy = (bool) $options['accept_legacy'];
         }
+    }
+
+    /**
+     * 获取单例实例
+     *
+     * 带参数调用时返回新实例：加密盐是实例级状态，若沿用单例会静默忽略后续参数，
+     * 常驻进程内就会一直使用首次传入的盐。
+     *
+     * @param mixed ...$args 构造参数(salt, field_map, options)
+     * @return static
+     */
+    public static function instance(...$args)
+    {
+        if (!empty($args)) {
+            return new static(...$args);
+        }
+
+        return static::createInstance([]);
     }
 
     /**

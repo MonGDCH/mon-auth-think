@@ -8,6 +8,7 @@ use mon\thinkORM\Dao;
 use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacDaoException;
+use mon\auth\rbac\dao\concern\FreshValidator;
 
 /**
  * 用户-角色关联Dao模型
@@ -17,6 +18,8 @@ use mon\auth\exception\RbacDaoException;
  */
 class Access extends Dao
 {
+    use FreshValidator;
+
     /**
      * Auth实例
      *

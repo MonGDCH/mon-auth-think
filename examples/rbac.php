@@ -1,152 +1,96 @@
 <?php
 
-use think\facade\Db;
+/**
+ * RBAC 权限校验与角色/规则维护（需要数据库）
+ *
+ * 注意：mon\auth\rbac\Auth 自 v1.2.0 起不再提供 instance()，请直接 new Auth($config)；
+ * 常驻进程内请在启动阶段构建一次并复用（Gaia 框架可直接使用 support\auth\RbacService）。
+ */
+
 use mon\auth\rbac\Auth;
+use mon\thinkORM\Db;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$dbConfig = [
+Db::setConfig([
     // 默认数据连接标识
     'default' => 'mysql',
     // 数据库连接信息
     'connections' => [
         'mysql' => [
-            // 数据库类型
-            'type'              => 'mysql',
-            // 服务器地址
-            'hostname'          => '127.0.0.1',
-            // 数据库名
-            'database'          => 'test',
-            // 数据库用户名
-            'username'          => 'root',
-            // 数据库密码
-            'password'          => '123456',
-            // 数据库连接端口
-            'hostport'          => '3306',
-            // 数据库连接参数
-            'params'            => [
-                // 连接超时3秒
-                \PDO::ATTR_TIMEOUT => 3,
-            ],
-            // 数据库编码默认采用utf8
-            'charset'           => 'utf8mb4',
-            // 数据库表前缀
-            'prefix'            => '',
-            // 数据库部署方式:0 集中式(单一服务器),1 分布式(主从服务器)
-            'deploy'            => 0,
-            // 数据库读写是否分离 主从式有效
-            'rw_separate'       => false,
-            // 读写分离后 主服务器数量
-            'master_num'        => 1,
-            // 指定从服务器序号
-            'slave_no'          => '',
-            // 检查字段是否存在
-            'fields_strict'     => true,
-            // 自动写入时间戳字段
-            'auto_timestamp'    => false,
-            // 不自动格式化时间戳
-            'datetime_format'   => false,
-            // 断线重连
-            'break_reconnect'   => true,
-            // 是否开启字段缓存
-            'fields_cache'      => false,
-            // 是否开启SQL监听，默认关闭，如需要开启，则需要调用 Db::setLog 注入日志记录对象，否则常驻进程长期运行会爆内存
-            'trigger_sql'       => true,
-            // 自定义查询类，支持Dao对象调用
-            'query'             => \mon\thinkORM\extend\Query::class,
+            'type'            => 'mysql',
+            'hostname'        => '127.0.0.1',
+            'database'        => 'test',
+            'username'        => 'root',
+            'password'        => '123456',
+            'hostport'        => '3306',
+            'params'          => [\PDO::ATTR_TIMEOUT => 3],
+            'charset'         => 'utf8mb4',
+            'prefix'          => '',
+            'deploy'          => 0,
+            'rw_separate'     => false,
+            'master_num'      => 1,
+            'slave_no'        => '',
+            'fields_strict'   => true,
+            'auto_timestamp'  => false,
+            'datetime_format' => false,
+            'break_reconnect' => true,
+            'fields_cache'    => false,
+            // 常驻进程下开启SQL监听务必注入日志对象，否则会持续占用内存
+            'trigger_sql'     => false,
+            'query'           => \mon\thinkORM\extend\Query::class,
         ],
     ],
-];
-Db::setConfig($dbConfig);
+]);
 
+$auth = new Auth([
+    // 角色表
+    'auth_role'         => 'auth_role',
+    // 用户-角色关联表
+    'auth_role_access'  => 'auth_access',
+    // 权限规则表
+    'auth_rule'         => 'auth_rule',
+    // 超级管理员权限标志
+    'admin_mark'        => '*',
+]);
 
-$auth = Auth::instance()->init();
-
-// 新增规则
-// $save = $auth->dao('rule')->add([
-//     'title'     => 't',
-//     'name'      => 't7',
-//     'remark'    => 't3_remark',
-//     'pid'       => 0
+// ---------- 规则维护（Rule） ----------
+// $ruleId = $auth->getRuleDao()->add([
+//     'pid'    => 0,
+//     'title'  => '系统管理',
+//     'rule'   => '/admin/sys',
+//     'remark' => '',
+//     'status' => 1,
 // ]);
 
-
-// 修改规则
-// $save = $auth->dao('rule')->modify([
-//     'title'     => 'ttsx',
-//     'name'      => '123asda',
-//     'remark'    => '',
-//     'pid'       => 0,
-//     'status'    => 1,
-//     'idx'       => 369
+// ---------- 角色维护（Role） ----------
+// $roleId = $auth->getRoleDao()->add([
+//     'pid'    => 0,
+//     'title'  => '测试角色',
+//     'rules'  => [1, 2],
+//     'status' => 1,
+// ]);
+// $auth->getRoleDao()->modify([
+//     'id'     => 1,
+//     'pid'    => 0,
+//     'title'  => '测试角色',
+//     'rules'  => [1, 2, 3],
+//     'status' => 1,
 // ]);
 
+// ---------- 用户-角色关联（Access） ----------
+// $auth->getAccessDao()->bind(['uid' => 10, 'gid' => 1]);
+// $auth->getAccessDao()->modify(['uid' => 10, 'gid' => 1, 'new_gid' => 2]);
+// $auth->getAccessDao()->unbind(['uid' => 10, 'gid' => 2]);
+// $auth->getAccessDao()->getUserRole(10);
 
-// 新增组别
-// $save = $auth->dao('group')->add([
-//     'pid'   => 0,
-//     'title' => 'testsss',
-//     'rules' => [8, 6]
-// ]);
+// ---------- 权限校验 ----------
+// 规则名与 auth_rule.rule 一致，比较时统一转小写
+$check = $auth->check('/admin/sys/auth/group/add', 1);
+var_dump($check);
 
+// 批量校验：第三个参数 false 表示必须全部具备
+var_dump($auth->check(['/admin/sys', '/admin/sys/auth/group/add'], 1, false));
 
-// 更新组别
-// $save = $auth->dao('group')->modify([
-//     'idx'   => 3,
-//     'pid'   => 0,
-//     'title' => 'demo1',
-//     'rules' => [8, 7, 9],
-//     'status'=> 1,
-// ]);
-
-// 绑定用户组别
-// $save = $access = $auth->dao('access')->bind([
-//     'uid'   => 10,
-//     'gid'   => 12,
-// ]);
-
-// 修改用户组别
-// $save = $access = $auth->dao('access')->modify([
-//     'uid'   => 2,
-//     'gid'   => 1,
-//     'new_gid'   => 2
-// ]);
-
-// 解除组别绑定
-// $save = $access = $auth->dao('access')->unbind([
-//     'uid'   => 10,
-//     'gid'   => 12,
-// ]);
-
-// 获取用户所在组别
-// $access = $auth->dao('access')->getUserGroup(2);
-
-
-
-// 获取用户权限节点
-// $data = Auth::instance()->getAuthIds(1);
-
-// 获取用户权限列表
-// $data = Auth::instance()->getAuthList(2);
-
-// 获取用户权限
-// $data = Auth::instance()->getRule(1);
-
-// 校验单个权限
-// $data = Auth::instance()->check('123asda', 2, true);
-// 校验多个权限
-// $check = Auth::instance()->check(['123asda', 'aa'], 1, false);
-
-// var_dump($check);
-
-// try {
-//     dd($auth->check('/admin/sys/auth/group/add', 3));
-// } catch (Throwable $e) {
-//     dd($e->getMessage());
-// }
-
-
-dd($data);
-// dd($save);
-
-dd(Db::getDbLog());
+// 获取用户的权限列表
+var_dump($auth->getAuthList(1));

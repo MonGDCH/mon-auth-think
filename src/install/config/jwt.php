@@ -14,6 +14,7 @@ return [
     'configs' => [
         'admin' => [
             // 加密key
+            // 注意：默认值占位符由 vendor:publish 替换为随机key，未替换时初始化会直接抛异常，也可通过环境变量 AUTH_JWT_KEY 指定
             'key'       => env('AUTH_JWT_KEY', '%s'),
             // 加密算法
             'alg'       => 'HS256',

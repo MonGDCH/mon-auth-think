@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace mon\auth\api\dao;
 
-use mon\auth\api\contract\Dao;
-
 /**
  * 从Array数据源中获取数据
  * 
  * @author Mon <985558837@qq.com>
  * @version 1.0.0
  */
-class ArrayDao implements Dao
+class ArrayDao extends AbstractDao
 {
     /**
      * 数据源
@@ -28,7 +26,7 @@ class ArrayDao implements Dao
      */
     public function __construct(array $config)
     {
-        $this->data = $config['data'];
+        $this->data = isset($config['data']) && is_array($config['data']) ? $config['data'] : [];
     }
 
     /**
@@ -51,34 +49,16 @@ class ArrayDao implements Dao
     {
         $result = [];
         foreach ($this->data as $item) {
-            if ($item['app_id'] == $app_id) {
+            if (!is_array($item) || !isset($item['app_id'])) {
+                continue;
+            }
+            // 严格比较：松散比较下 '0e123' 与 '0e456' 会被当作数值相等，可能命中其他应用的数据
+            if ((string) $item['app_id'] === $app_id) {
                 $result = $item;
                 break;
             }
         }
 
         return $result;
-    }
-
-    /**
-     * 是否有效
-     *
-     * @param array $info   应用信息
-     * @return boolean
-     */
-    public function effect(array $info): bool
-    {
-        return $info['status'] == 1;
-    }
-
-    /**
-     * 是否在有效期内
-     *
-     * @param array $info   应用信息
-     * @return boolean
-     */
-    public function expire(array $info): bool
-    {
-        return empty($info['expired_time']) || strtotime($info['expired_time']) > time();
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace mon\auth\api;
 
 use mon\util\Instance;
+use mon\auth\api\concern\SaltGuard;
 use mon\auth\api\driver\AccessToken;
 use mon\auth\exception\ApiException;
 
@@ -69,6 +70,26 @@ class AccessTokenAuth extends ApiAuth
     ];
 
     /**
+     * 获取单例实例
+     *
+     * 带配置调用时会以「默认配置 + 入参」重新初始化，不会静默忽略后续传入的配置；
+     * 需要每个请求使用独立实例时请使用 newInstance()
+     *
+     * @param mixed ...$args 首个参数为配置数组
+     * @throws ApiException
+     * @return static
+     */
+    public static function instance(...$args)
+    {
+        $config = $args[0] ?? [];
+        if (!is_array($config)) {
+            throw new ApiException('初始化配置必须为数组', ApiException::AUTH_INIT_ERROR);
+        }
+
+        return static::resolveInstance($config);
+    }
+
+    /**
      * 获取驱动实例
      *
      * @return AccessToken
@@ -94,7 +115,7 @@ class AccessTokenAuth extends ApiAuth
             throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
         }
 
-        return $this->getDriver()->create($app_id, $secret, $extend, $ip, $this->getConfig('expire'));
+        return $this->getDriver()->create($app_id, $secret, $extend, $ip, (int) $this->getConfig('expire'));
     }
 
     /**
@@ -165,11 +186,9 @@ class AccessTokenAuth extends ApiAuth
      */
     protected function initDriver()
     {
-        // 盐必须显式配置，未配置（默认空值）时直接拒绝初始化
+        // 盐必须显式配置，未配置（默认空值）或仍为配置模板占位符时直接拒绝初始化
         $salt = (string) $this->getConfig('salt');
-        if ($salt === '') {
-            throw new ApiException('未配置有效的AccessToken加密盐', ApiException::AUTH_INIT_ERROR);
-        }
+        SaltGuard::assert($salt, 'AccessToken');
         // 获取AccessToken实例
         $this->driver = new AccessToken($this->getConfig('salt'), $this->getConfig('field'), [
             'format'        => $this->getConfig('token_format'),

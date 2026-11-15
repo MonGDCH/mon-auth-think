@@ -47,12 +47,14 @@ class RbacService
     /**
      * 注册配置信息
      *
+     * 增量覆盖配置文件中的同名配置项，同时丢弃已缓存的Dao实例（表名可能已变更）
+     *
      * @param array $config 配置信息
      * @return RbacService
      */
     public function register(array $config): RbacService
     {
-        $this->getService()->init($config);
+        $this->getService()->setConfig($config);
         return $this;
     }
 

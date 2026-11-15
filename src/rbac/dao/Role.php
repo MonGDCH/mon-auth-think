@@ -9,6 +9,7 @@ use mon\auth\rbac\Auth;
 use mon\auth\rbac\Validate;
 use mon\auth\exception\RbacDaoException;
 use mon\auth\rbac\UpdateChildrenService;
+use mon\auth\rbac\dao\concern\FreshValidator;
 
 /**
  * 角色模型
@@ -18,6 +19,8 @@ use mon\auth\rbac\UpdateChildrenService;
  */
 class Role extends Dao
 {
+    use FreshValidator;
+
     /**
      * Auth实例
      *
@@ -184,7 +187,8 @@ class Role extends Dao
         try {
             // 更新后代数据
             $updateChildrenData = [];
-            $sdk = new UpdateChildrenService($this->table);
+            // 传入Dao的连接配置，保证子树快照、加锁与批量更新在同一连接/事务内
+            $sdk = new UpdateChildrenService($this->table, 'id', 'pid', 'pids', $this->getConnection());
             if ($removedPermissions || $updateChildrenInvalidStatus || $updatePids) {
                 // 更新后代数据服务
                 $childrens = $sdk->getTree()->getChildren($idx);

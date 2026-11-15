@@ -6,6 +6,7 @@ namespace mon\auth\api;
 
 use mon\util\Instance;
 use mon\auth\api\driver\Signature;
+use mon\auth\api\concern\SaltGuard;
 use mon\auth\exception\ApiException;
 use mon\auth\api\contract\NonceStore;
 
@@ -76,6 +77,26 @@ class SignatureAuth extends ApiAuth
     ];
 
     /**
+     * 获取单例实例
+     *
+     * 带配置调用时会以「默认配置 + 入参」重新初始化，不会静默忽略后续传入的配置；
+     * 需要每个请求使用独立实例时请使用 newInstance()
+     *
+     * @param mixed ...$args 首个参数为配置数组
+     * @throws ApiException
+     * @return static
+     */
+    public static function instance(...$args)
+    {
+        $config = $args[0] ?? [];
+        if (!is_array($config)) {
+            throw new ApiException('初始化配置必须为数组', ApiException::AUTH_INIT_ERROR);
+        }
+
+        return static::resolveInstance($config);
+    }
+
+    /**
      * 获取驱动实例
      *
      * @return Signature
@@ -137,7 +158,7 @@ class SignatureAuth extends ApiAuth
         // 验证签名有效期（双向窗口：既拒绝过期请求，也拒绝超前的时间戳，防止未来时间戳长期有效）
         $field = $this->getConfig('field');
         $timestamp = isset($data[$field['timestamp']]) ? intval($data[$field['timestamp']]) : 0;
-        if ($timestamp <= 0 || abs(time() - $timestamp) > $this->getConfig('expire')) {
+        if ($timestamp <= 0 || abs(time() - $timestamp) > (int) $this->getConfig('expire')) {
             throw new ApiException('API签名已过期', ApiException::SIGN_TIME_INVALID);
         }
 
@@ -182,11 +203,9 @@ class SignatureAuth extends ApiAuth
      */
     protected function initDriver()
     {
-        // 盐必须显式配置，未配置（默认空值）时直接拒绝初始化
+        // 盐必须显式配置，未配置（默认空值）或仍为配置模板占位符时直接拒绝初始化
         $salt = (string) $this->getConfig('salt');
-        if ($salt === '') {
-            throw new ApiException('未配置有效的Signature加密盐', ApiException::AUTH_INIT_ERROR);
-        }
+        SaltGuard::assert($salt, 'Signature');
         // 获取Signature实例
         $this->driver = new Signature($this->getConfig('salt'), $this->getConfig('field'), [
             'alg'           => (string) $this->getConfig('alg'),

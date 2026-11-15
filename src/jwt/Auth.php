@@ -39,17 +39,30 @@ class Auth
     ];
 
     /**
+     * 默认配置快照
+     *
+     * 构造时从 $config 属性的初始值复制，作为 init() 重建配置的基准，
+     * 避免常驻进程内多次初始化把上一次的配置累积进来。
+     *
+     * @var array
+     */
+    protected $default_config = [];
+
+    /**
      * 构造方法
      *
      * @param array $config 配置信息
      */
     public function __construct(array $config = [])
     {
+        $this->default_config = $this->config;
         $this->init($config);
     }
 
     /**
      * 初始化方法
+     *
+     * 以默认配置为基准合并入参，不继承上一次调用残留的配置
      *
      * @param array $config 配置信息
      * @throws JwtException
@@ -57,10 +70,35 @@ class Auth
      */
     public function init(array $config = []): Auth
     {
-        if (!empty($config)) {
-            $this->config = array_merge($this->config, $config);
-        }
+        $this->config = array_merge($this->default_config, $config);
 
+        return $this->assertConfig();
+    }
+
+    /**
+     * 设置配置
+     *
+     * 在当前配置基础上增量合并，用于只覆盖个别配置项
+     *
+     * @param array $config 配置信息
+     * @throws JwtException
+     * @return Auth
+     */
+    public function setConfig(array $config): Auth
+    {
+        $this->config = array_merge($this->config, $config);
+
+        return $this->assertConfig();
+    }
+
+    /**
+     * 校验配置
+     *
+     * @throws JwtException
+     * @return Auth
+     */
+    protected function assertConfig(): Auth
+    {
         // 校验加密key配置，避免空key或发布占位符被直接用于生产签名
         if (empty($this->config['key']) || $this->config['key'] === '%s') {
             throw new JwtException('JWT加密key未配置', JwtException::JWT_CONFIG_NOT_FOUND);
@@ -92,10 +130,10 @@ class Auth
         $sub = $sub ?: $this->getConfig('sub');
         $payload->setSub($sub);
         // 设置生效时间
-        $nbf = $nbf > 0 ? $nbf : $this->getConfig('nbf');
+        $nbf = $nbf > 0 ? $nbf : (int) $this->getConfig('nbf');
         $payload->setNbf($nbf);
         // 设置有效时间
-        $exp = $exp > 0 ? $exp : $this->getConfig('exp');
+        $exp = $exp > 0 ? $exp : (int) $this->getConfig('exp');
         $payload->setExp($exp);
         // 设置接收用户
         $payload->setAud($aud);

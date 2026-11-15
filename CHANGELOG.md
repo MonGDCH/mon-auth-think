@@ -1,5 +1,49 @@
 # 更新日志
 
+## v1.4.0（2026-11-15）
+
+常驻进程（Workerman/Gaia/Swoole）状态隔离与安全加固。**含配置合并语义变更**，升级前请阅读文末说明。
+
+### 常驻进程状态隔离（P0）
+
+- **修复配置跨请求累积**：`ApiAuth::init()` / `jwt\Auth::init()` / `rbac\Auth::init()` 原实现为 `array_merge($this->config, $config)`，同一进程内第二次初始化会继承上一次的配置（如请求A设置的`expire`一直生效）。现改为以构造时的**默认配置快照**为基准重建；新增 `setConfig()` 提供增量语义；
+- **修复`instance($config)`静默丢弃配置**：`mon\util\Instance`在实例已存在时忽略传入参数，常驻进程内表现为“首个请求的盐/Dao被固定下来”，多应用/多租户下会用A的密钥校验B的请求。`SignatureAuth/AccessTokenAuth::instance($config)`现会按「默认配置+入参」重新初始化；新增 `newInstance($config)` 用于并存的多套配置。同理修正 `Signature/AccessToken` 驱动的 `instance($salt, ...)`；
+- **修复嵌套配置被整体覆盖**：`ApiAuth` 现对 `field`、`dao`、`dao.construct` 递归合并。此前只传 `'field' => ['app_id' => 'aid']` 会丢失其余字段映射，导致 `Undefined array key "timestamp"` 且所有合法签名都被判“已过期”；只传 `'dao' => ['driver' => ...]` 会丢失 `construct` 并抛 `TypeError`；
+- **修复RBAC缓存Dao不随配置失效**：Dao在构造时快照表名/时间戳字段，`init()/setConfig()` 后仍复用旧实例，出现“配置改了但读写旧表”。现配置变更即重置 `$daos` 缓存；
+- **修复验证器跨请求残留**：`Dao::validate()` 原从容器取单例，常驻进程内会残留上一次请求的数据/场景/错误信息。RBAC三个Dao改为按次创建验证器实例（`dao\concern\FreshValidator`）。
+
+### 安全修复（P1）
+
+- **`app_id`严格比较**：`AccessToken::getData()` 与 `ArrayDao::getInfo()` 原使用 `!=`/`==`，PHP 8 数字字符串比较下 `'0e111111'` 与 `'0e222222'` 判定相等，可用其他应用ID通过校验。现统一严格比较；
+- **拒绝配置模板占位符盐**：`salt` 为 `'%s'`（`Install::publish` 未替换/手工复制模板）时此前可通过初始化，等价于公开密钥。新增 `api\concern\SaltGuard`，`Signature`/`AccessToken` 驱动与其服务类统一拒绝空值与 `'%s'`（与JWT的key校验保持一致）；
+- **AccessToken IP绑定语义明确化**：签发时 `ip` 为空表示不绑定IP（此前这类token传入真实IP必定失败，签发方漏传IP即整个应用不可用）；绑定IP后仍严格校验；
+- **nonce存储异常信息脱敏**：`RedisNonceStore` 不再把底层异常（可能含连接地址）拼进对外消息，原始异常通过 `getPrevious()` 保留。
+
+### 修复与改进
+
+- `AccessToken::create()` 增加 `json_encode` 失败防护：扩展数据含非法UTF-8时抛 `ACCESS_TOKEN_ENCODE_ERROR`（新增错误码 40130），不再抛 `TypeError`（与JWT侧同类修复对齐）；
+- `ApiAuth::initDao()` 增加配置校验：`dao`/`dao.construct` 非数组、驱动类不存在时抛出 `DAO_NOT_SUPPORT`，替代未定义键警告 + `TypeError`；
+- `UpdateChildrenService` 支持传入数据库连接配置（构造函数第5个参数），`Role/Rule` 传入 Dao 的 `connection`，避免子树批量更新与主事务不在同一连接；内部事务/查询统一走该连接；
+- `DatabaseDao`/`ArrayDao` 抽出 `api\dao\AbstractDao`：`status` 缺失按无效处理（不再有未定义键警告），`expired_time` 兼容 datetime 字符串与整型时间戳，无法解析按已过期处理（fail-closed）；
+- Gaia 的 `RbacService/SignatureService/AccessTokenService::register()` 改为 `setConfig()` 增量语义，避免只注册局部配置（如 `nonce_store`）时丢失文件中的盐。
+
+### 文档与示例
+
+- **README 与 examples 全量对齐实际 API**：`jwt\Auth`、`rbac\Auth` 自 v1.2.0 起已移除 `instance()`，但文档仍在使用（`Call to undefined method`）；`examples/accesstoken1|2.php` 调用了不存在的 `checkToken()` 且 `createToken($appid, 数组)` 参数错位。现全部重写并可直接运行（DB 版示例需自备数据库）；
+- 新增「常驻进程注意事项」章节：初始化语义对照表、`Event` 监听器只允许启动阶段注册（进程级单例只增不减，请求级注册会导致重复执行与内存上涨）、事务/连接、时钟与 nonce 部署要求；
+- 补充错误码 `ACCESS_TOKEN_ENCODE_ERROR`、`SIGN_NONCE_STORE_ERROR` 说明。
+
+### 测试
+
+- 新增 `tests/api/ResidentProcessTest.php`、`tests/rbac/ConfigIsolationTest.php`、`tests/jwt/ConfigIsolationTest.php`，覆盖配置重建、单例重新初始化、深合并、占位符盐、严格比较、IP绑定、编码失败、Dao缓存失效等回归；用例数 88 → 108。
+
+### 升级说明
+
+1. `init($config)` 语义由“累积合并”变为“默认配置 + 入参重建”，需要增量覆盖请改用 `setConfig($config)`；
+2. 若曾手工复制 `install/config/*.php` 模板且未替换盐，升级后启动会抛 `AUTH_INIT_ERROR`，请填入真实随机盐；
+3. 以空IP签发的存量 AccessToken 现在可在任意IP使用（此前必定校验失败），如需绑定IP请在签发时传入；
+4. 已缓存 `Auth` 对象在配置变更后会自动重建 Dao，无需手动清缓存。
+
 ## v1.3.1（2026-11-15）
 
 安全与稳定性修复，**无破坏性变更（`APIException` 改名保留向后兼容）**，建议所有常驻进程（Workerman/Webman/Swoole）用户升级。

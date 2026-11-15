@@ -64,34 +64,49 @@ class Auth
     ];
 
     /**
+     * 默认配置快照
+     *
+     * 构造时从 $config 属性的初始值复制，作为 init() 重建配置的基准，
+     * 避免常驻进程内多次初始化把上一次的配置累积进来。
+     *
+     * @var array
+     */
+    protected $default_config = [];
+
+    /**
      * 构造方法
      *
      * @param array $config 配置信息
      */
     public function __construct(array $config = [])
     {
+        $this->default_config = $this->config;
         if (!empty($config)) {
-            $this->config = array_merge($this->config, $config);
+            $this->init($config);
         }
     }
 
     /**
      * 初始化方法
      *
+     * 以默认配置为基准合并入参，不继承上一次调用残留的配置
+     *
      * @param array $config 配置信息
      * @return Auth
      */
     public function init(array $config = []): Auth
     {
-        if (!empty($config)) {
-            $this->config = array_merge($this->config, $config);
-        }
+        $this->config = array_merge($this->default_config, $config);
+        // 配置可能变更了表名/时间戳字段，必须丢弃已缓存Dao
+        $this->resetDao();
+
         return $this;
     }
 
-
     /**
      * 设置配置
+     *
+     * 在当前配置基础上增量合并，用于只覆盖个别配置项
      *
      * @param array $config 设置配置信息
      * @return Auth
@@ -99,8 +114,21 @@ class Auth
     public function setConfig(array $config): Auth
     {
         $this->config = array_merge($this->config, $config);
+        $this->resetDao();
 
         return $this;
+    }
+
+    /**
+     * 重置Dao实例缓存
+     *
+     * Dao在构造时快照了表名与时间戳字段，常驻进程下继续复用旧实例会读写错表
+     *
+     * @return void
+     */
+    protected function resetDao()
+    {
+        $this->daos = [];
     }
 
     /**

@@ -63,8 +63,9 @@ class RedisNonceStore implements NonceStore
             // SET key value NX EX ttl 原子操作：返回false即已存在（重放）
             $result = $this->client->set($key, '1', ['nx', 'ex' => $ttl]);
         } catch (\Throwable $e) {
-            // 存储故障与重放是两类问题，使用独立错误码避免排障误导；请求按fail-closed拒绝
-            throw new ApiException('nonce存储写入失败：' . $e->getMessage(), ApiException::SIGN_NONCE_STORE_ERROR);
+            // 存储故障与重放是两类问题，使用独立错误码避免排障误导；请求按fail-closed拒绝。
+            // 原始异常通过 previous 保留，不把连接地址等底层细节拼进对外消息（避免异常信息直接返回给调用方时泄露内网信息）
+            throw new ApiException('nonce存储写入失败', ApiException::SIGN_NONCE_STORE_ERROR, 403, [], $e);
         }
 
         return (bool) $result;
