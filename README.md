@@ -4,7 +4,7 @@
 
 基于think-orm的PHP权限管理类库，包含`Jwt`、`RBAC`、`AccessToken`、`Signature`等权限控制类库。
 
-> 更新记录见 [CHANGELOG.md](CHANGELOG.md)。当前版本：`v1.4.0`（常驻进程状态隔离与安全加固，含行为变更，升级前请阅读[升级说明](#版本与升级说明)）。
+> 更新记录见 [CHANGELOG.md](CHANGELOG.md)。当前版本：`v1.3.2`（常驻进程状态隔离与安全加固，含行为变更，升级前请阅读[升级说明](#版本与升级说明)）。
 
 #### 环境要求
 
@@ -416,7 +416,7 @@ $auth->setConfig(['nonce_store' => new RedisNonceStore($redis)]);
 
 ## 版本与升级说明
 
-### v1.4.0 升级注意
+### v1.3.2 升级注意
 
 1. **配置合并语义变更**：`init($config)` 现在以默认配置为基准重建（不再累积历史配置）；需要增量覆盖请使用新增的 `setConfig($config)`。Gaia 的 `support\auth\*Service::register()` 已改为增量语义，行为基本无感知；
 2. **`instance($config)` 不再丢弃配置**：带配置调用会重新初始化单例，多套配置并存请改用 `newInstance($config)`；

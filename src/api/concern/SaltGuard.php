@@ -20,6 +20,13 @@ use mon\auth\exception\ApiException;
 final class SaltGuard
 {
     /**
+     * 配置模板占位符
+     *
+     * 由 Install::publish() 的 sprintf 替换，残留说明配置未正确生成
+     */
+    const PLACEHOLDER = '%s';
+
+    /**
      * 校验加密盐
      *
      * @param string $salt 加密盐
@@ -29,7 +36,7 @@ final class SaltGuard
      */
     public static function assert(string $salt, string $name): void
     {
-        if ($salt === '') {
+        if ($salt === '' || $salt === self::PLACEHOLDER) {
             throw new ApiException('未配置有效的' . $name . '加密盐', ApiException::AUTH_INIT_ERROR);
         }
     }
