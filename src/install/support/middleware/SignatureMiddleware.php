@@ -7,7 +7,6 @@ namespace support\auth\middleware;
 use Closure;
 use mon\http\Response;
 use support\auth\SignatureService;
-use mon\auth\exception\ApiException;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
 

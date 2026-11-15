@@ -13,7 +13,7 @@ use mon\auth\rbac\Auth;
  * 
  * @method array getAuthIds(integer|string $uid) 获取角色权限节点对应权限
  * @method array getAuthList(integer|string $uid) 获取用户权限规则列表
- * @method array getRule(integer|string $uid) 获取权限规则
+ * @method array getRule(integer|string $uid, array $ids = null) 获取权限规则
  * @method mixed dao(string $name, boolean $cache = true) 获取权限操作Dao模型
  *
  * @author Mon <985558837@qq.com>

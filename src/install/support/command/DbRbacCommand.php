@@ -108,5 +108,6 @@ SQL;
         $sql = sprintf($roleSql, $auth_rule);
         Db::execute($sql);
         $out->block('Create Table `' . $auth_rule . '`', 'SUCCESS');
+        return 0;
     }
 }
