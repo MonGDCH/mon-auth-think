@@ -34,6 +34,8 @@ class Auth
         'nbf'       => 0,
         // 默认有效时间，生效时间 + exp
         'exp'       => 3600,
+        // 校验时间有效性的时钟偏移容差，单位秒
+        'leeway'    => 0,
     ];
 
     /**
@@ -131,7 +133,7 @@ class Auth
             throw new JwtException('Token Iss 异常', JwtException::JWT_PAYLOAD_ISS_ERROR);
         }
         // 校验时间有效性
-        Token::instance()->verify($payload);
+        Token::instance()->verify($payload, (int) $this->getConfig('leeway'));
 
         return $payload;
     }

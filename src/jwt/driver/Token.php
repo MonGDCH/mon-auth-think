@@ -48,9 +48,16 @@ class Token
         $header = ['typ' => 'JWT', 'alg' => $alg];
         $payload = $obj->getData();
 
+        // 扩展数据包含非法UTF-8等内容时 json_encode 返回 false，需转为可读异常而不是 TypeError
+        $headerJson = json_encode($header, JSON_UNESCAPED_UNICODE);
+        $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        if ($headerJson === false || $payloadJson === false) {
+            throw new JwtException('JWT数据编码失败，请检查数据是否包含非法字符', JwtException::JWT_ENCODE_ERROR);
+        }
+
         $info = [];
-        $info[] = $this->urlsafeB64Encode(json_encode($header, JSON_UNESCAPED_UNICODE));
-        $info[] = $this->urlsafeB64Encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
+        $info[] = $this->urlsafeB64Encode($headerJson);
+        $info[] = $this->urlsafeB64Encode($payloadJson);
 
         // 签名
         $data = implode('.', $info);
@@ -78,11 +85,17 @@ class Token
         }
         list($head, $body, $crypt) = $ticket;
         $header = json_decode($this->urlsafeB64Decode($head), true);
-        if (!$header) {
+        if (!is_array($header)) {
             throw new JwtException('无效的header编码', JwtException::JWT_TOKEN_HEADER_ERROR);
         }
+        // 校验typ，非JWT类型一律拒绝（防跨协议拼接）
+        if (isset($header['typ']) && strtoupper((string) $header['typ']) !== 'JWT') {
+            throw new JwtException('Token typ 异常', JwtException::JWT_TOKEN_HEADER_ERROR);
+        }
         $payload = json_decode($this->urlsafeB64Decode($body), true);
-        if (!$payload) {
+        // payload 必须为对象/数组形态：数字、字符串等标量若放行，
+        // 会在返回类型约束或后续取值处抛 TypeError（且发生在签名校验之前，可被未鉴权触发）
+        if (!is_array($payload)) {
             throw new JwtException('无效的payload编码', JwtException::JWT_TOKEN_PAYLOAD_ERROR);
         }
         $sign = $this->urlsafeB64Decode($crypt);
@@ -90,7 +103,7 @@ class Token
             throw new JwtException('无效的sign签名编码', JwtException::JWT_TOKEN_SIGN_ERROR);
         }
         // 验证加密方式
-        if (!isset($this->algs[$header['alg']])) {
+        if (!isset($header['alg']) || !isset($this->algs[$header['alg']])) {
             throw new JwtException('未支持加密方式', JwtException::JWT_ALG_NOT_FOUND);
         }
         if ($header['alg'] != $alg) {
@@ -111,15 +124,20 @@ class Token
      * @throws JwtException
      * @return boolean
      */
-    public function verify(array $payload): bool
+    public function verify(array $payload, int $leeway = 0): bool
     {
         $now = time();
         // 验证是否在有效期内
-        if (isset($payload['nbf']) && $payload['nbf'] > $now) {
+        if (isset($payload['nbf']) && (int) $payload['nbf'] > $now + $leeway) {
             throw new JwtException('Token签名未生效', JwtException::JWT_TOKEN_NBF_ERROR);
         }
-        if (isset($payload['exp']) && $payload['exp'] < $now) {
+        // exp 为到期时间戳，等于当前时间即视为过期
+        if (isset($payload['exp']) && (int) $payload['exp'] + $leeway <= $now) {
             throw new JwtException('Token签名已过期', JwtException::JWT_TOKEN_EXP_ERROR);
+        }
+        // 签发时间不允许出现在容差外的未来（视为伪造）
+        if (isset($payload['iat']) && (int) $payload['iat'] > $now + $leeway) {
+            throw new JwtException('Token签发时间异常', JwtException::JWT_TOKEN_IAT_ERROR);
         }
 
         // 触发jwt验证事件，回调方法可通过 throw JwtException 增加自定义的验证方式
@@ -137,12 +155,12 @@ class Token
      * @throws JwtException
      * @return boolean
      */
-    public function check(string $jwt, string $key, string $alg = 'HS256'): bool
+    public function check(string $jwt, string $key, string $alg = 'HS256', int $leeway = 0): bool
     {
         // 获取jwt数据
         $payload = $this->getData($jwt, $key, $alg);
         // 校验
-        return $this->verify($payload);
+        return $this->verify($payload, $leeway);
     }
 
     /**

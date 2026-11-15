@@ -66,6 +66,16 @@ class JwtException extends AuthException
     const JWT_TOKEN_EXP_ERROR = 30320;
 
     /**
+     * jwt-token签发时间异常
+     */
+    const JWT_TOKEN_IAT_ERROR = 30330;
+
+    /**
+     * jwt数据编码失败
+     */
+    const JWT_ENCODE_ERROR = 30340;
+
+    /**
      * jwt-token-payload不能为空
      */
     const JWT_PAYLOAD_NOT_EMPTY = 30400;
