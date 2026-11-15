@@ -6,7 +6,7 @@ namespace mon\auth\api;
 
 use mon\util\Instance;
 use mon\auth\api\driver\AccessToken;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * AccessToken签名API权限控制
@@ -90,13 +90,13 @@ class AccessTokenAuth extends ApiAuth
      * @param string $secret    应用秘钥
      * @param string $ip        签发ip地址
      * @param array $extend     扩展数据
-     * @throws APIException
+     * @throws ApiException
      * @return string
      */
     public function create(string $app_id, string $secret, string $ip = '', array $extend = []): string
     {
         if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
+            throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
         }
 
         return $this->getDriver()->create($app_id, $secret, $extend, $ip, $this->getConfig('expire'));
@@ -108,7 +108,7 @@ class AccessTokenAuth extends ApiAuth
      * @param string $app_id    应用ID
      * @param string $ip        签发ip地址
      * @param array $extend     扩展数据
-     * @throws APIException
+     * @throws ApiException
      * @return string
      */
     public function createToken(string $app_id, string $ip = '', array $extend = []): string
@@ -127,13 +127,13 @@ class AccessTokenAuth extends ApiAuth
      * @param string $app_id    应用ID
      * @param string $secret    应用秘钥
      * @param string $ip        请求ip地址
-     * @throws APIException
+     * @throws ApiException
      * @return array
      */
     public function getData(string $token, string $app_id, string $secret, string $ip = ''): array
     {
         if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
+            throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
         }
 
         return $this->getDriver()->getData($token, $app_id, $secret, $ip);
@@ -165,7 +165,7 @@ class AccessTokenAuth extends ApiAuth
         // 禁止使用库内置的公开默认盐，否则所有使用该库的项目共享同一个公开密钥，Token可被伪造
         $salt = (string) $this->getConfig('salt');
         if ($salt === '' || in_array($salt, static::BUILTIN_SALTS, true)) {
-            throw new APIException('未配置有效的AccessToken加密盐（禁止使用库内置默认盐）', APIException::AUTH_INIT_ERROR);
+            throw new ApiException('未配置有效的AccessToken加密盐（禁止使用库内置默认盐）', ApiException::AUTH_INIT_ERROR);
         }
         // 获取AccessToken实例
         $this->driver = new AccessToken($this->getConfig('salt'), $this->getConfig('field'), [

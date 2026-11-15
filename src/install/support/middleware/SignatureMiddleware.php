@@ -7,7 +7,7 @@ namespace support\auth\middleware;
 use Closure;
 use mon\http\Response;
 use support\auth\SignatureService;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
 
@@ -31,7 +31,7 @@ class SignatureMiddleware implements Middlewareinterface
         // 验证签名
         $check = SignatureService::instance()->checkToken($request->post());
         if (!$check) {
-            throw new APIException('无效的App signature数据');
+            throw new ApiException('无效的App signature数据');
         }
 
         return $callback($request);

@@ -6,7 +6,7 @@ namespace mon\auth\tests\api;
 
 use PHPUnit\Framework\TestCase;
 use mon\auth\api\nonce\RedisNonceStore;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * 可模拟Redis客户端
@@ -51,13 +51,13 @@ class RedisNonceStoreTest extends TestCase
 {
     public function testInvalidClientRejected(): void
     {
-        $this->expectException(APIException::class);
+        $this->expectException(ApiException::class);
         new RedisNonceStore('not an object');
     }
 
     public function testClientWithoutSetMethodRejected(): void
     {
-        $this->expectException(APIException::class);
+        $this->expectException(ApiException::class);
         new RedisNonceStore(new \stdClass());
     }
 
@@ -102,7 +102,7 @@ class RedisNonceStoreTest extends TestCase
     {
         $store = new RedisNonceStore(new BrokenRedisClient());
 
-        $this->expectException(APIException::class);
+        $this->expectException(ApiException::class);
         $store->put('APP001', 'n1', 60);
     }
 }

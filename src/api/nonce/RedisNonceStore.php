@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace mon\auth\api\nonce;
 
 use mon\auth\api\contract\NonceStore;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * 基于Redis的签名nonce防重放存储
@@ -41,7 +41,7 @@ class RedisNonceStore implements NonceStore
     public function __construct($client, string $prefix = 'auth:nonce:')
     {
         if (!is_object($client) || !method_exists($client, 'set')) {
-            throw new APIException('RedisNonceStore需要注入支持set方法的Redis客户端实例', APIException::DAO_NOT_SUPPORT);
+            throw new ApiException('RedisNonceStore需要注入支持set方法的Redis客户端实例', ApiException::DAO_NOT_SUPPORT);
         }
         $this->client = $client;
         $this->prefix = $prefix;
@@ -53,7 +53,7 @@ class RedisNonceStore implements NonceStore
      * @param  string  $app_id 应用ID
      * @param  string  $nonce  随机字符串
      * @param  integer $ttl    存活时间
-     * @throws APIException Redis操作失败时抛出
+     * @throws ApiException Redis操作失败时抛出
      * @return boolean true=占位成功；false=nonce已存在（重放）
      */
     public function put(string $app_id, string $nonce, int $ttl): bool
@@ -63,7 +63,7 @@ class RedisNonceStore implements NonceStore
             // SET key value NX EX ttl 原子操作：返回false即已存在（重放）
             $result = $this->client->set($key, '1', ['nx', 'ex' => $ttl]);
         } catch (\Throwable $e) {
-            throw new APIException('nonce存储写入失败：' . $e->getMessage(), APIException::SIGN_REPLAY);
+            throw new ApiException('nonce存储写入失败：' . $e->getMessage(), ApiException::SIGN_REPLAY);
         }
 
         return (bool) $result;

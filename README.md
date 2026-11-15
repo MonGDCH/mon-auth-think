@@ -4,6 +4,8 @@
 
 基于think-orm的PHP权限管理类库，包含`Jwt`、`RBAC`、`AccessToken`、`Signature`等权限控制类库。
 
+> 更新记录见 [CHANGELOG.md](CHANGELOG.md)。当前版本：`v1.3.1`（安全与稳定性修复，无破坏性变更）。
+
 #### 环境要求
 
 - PHP >= 7.4（需要 openssl 扩展）
@@ -142,7 +144,7 @@ DAO层支持角色/规则的树形维护（自动维护`pids`层级链，并同�
 
 use mon\util\Event;
 use mon\auth\api\AccessTokenAuth;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 // 初始化（默认读取config('auth.access_token')配置）
 AccessTokenAuth::instance()->init();
@@ -155,8 +157,8 @@ Event::instance()->listen('access_check', function ($data) {
     // token数据
     // dd($data);
 
-    // 抛出异常 APIException 作为验证不通过的标志
-    throw new APIException('自定义验证错误', 0, null, $data);
+    // 抛出异常 ApiException 作为验证不通过的标志
+    throw new ApiException('自定义验证错误', 0, null, $data);
 });
 
 // 签发token（服务级：自动查询应用秘钥）
@@ -165,7 +167,7 @@ $token = AccessTokenAuth::instance()->createToken($appid, '127.0.0.1', ['scope' 
 // 校验并获取token数据（服务级）
 try {
     $decode = AccessTokenAuth::instance()->getTokenData($token, $appid, '127.0.0.1');
-} catch (APIException $e) {
+} catch (ApiException $e) {
     dd('验证不通过！' . $e->getMessage() . ' code: ' . $e->getCode());
 }
 
@@ -192,6 +194,12 @@ $data = AccessTokenAuth::instance()->getDriver()->parse($token, $secret);
 
 接口签名校验，基于`app_id`+`secret`对请求参数签名，防篡改。**v1.1.0起签名校验严格化**：签名错误、秘钥错误、参数篡改均直接抛出异常。
 
+**v1.3.1起支持`hmac-sha256`签名算法**（配置`'alg' => 'hmac-sha256'`，默认保持`md5`向后兼容，校验时自动兼容旧版md5签名），并强制双向时间窗校验（未来时间戳的签名同样被拒绝）。注意：
+
+- 签名串必须以服务端算法为准：服务端对参数做`ksort + http_build_query`后拼接签名，客户端必须用相同方式生成；
+- 数字键参数、嵌套数组、布尔值的序列化形态需与客户端一致，否则会出现验签不一致（与密钥无关）；
+- 使用库内置默认盐初始化会直接抛出异常，请务必配置自定义盐。
+
 ```php
 
 use mon\auth\api\SignatureAuth;
@@ -214,7 +222,7 @@ $tokenData = SignatureAuth::instance()->createToken($appid, $data);
 // 完整校验（服务级：验签+有效期+应用校验）
 try {
     $check = SignatureAuth::instance()->checkToken($tokenData);
-} catch (\mon\auth\exception\APIException $e) {
+} catch (\mon\auth\exception\ApiException $e) {
     dd('校验失败：' . $e->getMessage() . ' code: ' . $e->getCode());
 }
 
@@ -269,7 +277,7 @@ SignatureAuth::instance()->init([
 | AUTH_INIT_ERROR | 10000 | 服务未初始化 |
 | OPENSSL_ERROR | 10100 | openssl操作失败 |
 
-### API（APIException）
+### API（ApiException）
 
 | 常量 | 值 | 说明 |
 |---|---|---|

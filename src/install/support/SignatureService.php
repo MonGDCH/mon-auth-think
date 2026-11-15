@@ -57,7 +57,7 @@ class SignatureService
      * 获取应用信息
      *
      * @param string $app_id    应用ID
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return array
      */
     public function getAppInfo(string $app_id): array
@@ -71,7 +71,7 @@ class SignatureService
      * @param string $app_id    应用ID
      * @param string $secret    应用秘钥
      * @param array $data       需要签名的数据
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return array
      */
     public function create(string $app_id, string $secret, array $data = []): array
@@ -84,7 +84,7 @@ class SignatureService
      *
      * @param string $app_id    应用ID
      * @param array $data       需要签名的数据
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return array
      */
     public function createToken(string $app_id, array $data = []): array
@@ -97,7 +97,7 @@ class SignatureService
      *
      * @param string $secret    应用秘钥
      * @param array $data       签名数据
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return boolean
      */
     public function check(string $secret, array $data): bool
@@ -109,7 +109,7 @@ class SignatureService
      * 验证签名
      *
      * @param array $data   签名数据
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return boolean
      */
     public function checkToken(array $data): bool

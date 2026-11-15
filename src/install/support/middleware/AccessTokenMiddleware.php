@@ -6,7 +6,7 @@ namespace support\auth\middleware;
 
 use Closure;
 use mon\http\Response;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 use support\auth\AccessTokenService;
 use mon\http\interfaces\RequestInterface;
 use mon\http\interfaces\Middlewareinterface;
@@ -35,7 +35,7 @@ class AccessTokenMiddleware implements Middlewareinterface
         // 验证参数
         if (empty($token) || empty($appid)) {
             // 不存在APPID或Token
-            throw new APIException('无效的App Access Token数据');
+            throw new ApiException('无效的App Access Token数据');
         }
 
         // 验证签名，获取Token中的数据

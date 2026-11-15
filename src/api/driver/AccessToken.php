@@ -369,7 +369,7 @@ class AccessToken implements Driver
             throw new ApiException('Token授权IP无效', ApiException::ACCESS_TOKEN_INVALID);
         }
 
-        // 触发AccessToken验证事件，回调方法可通过 throw APIException 增加自定义的验证方式
+        // 触发AccessToken验证事件，回调方法可通过 throw ApiException 增加自定义的验证方式
         Event::instance()->trigger('access_check', $data);
 
         return $data;

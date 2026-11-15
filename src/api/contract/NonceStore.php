@@ -22,7 +22,7 @@ interface NonceStore
      * @param  string  $app_id 应用ID
      * @param  string  $nonce  随机字符串
      * @param  integer $ttl    存活时间，应等于签名有效期
-     * @throws \mon\auth\exception\APIException 存储不可用时由实现自行决定抛出异常或返回结果
+     * @throws \mon\auth\exception\ApiException 存储不可用时由实现自行决定抛出异常或返回结果
      * @return boolean true=占位成功；false=nonce已存在（重放）
      */
     public function put(string $app_id, string $nonce, int $ttl): bool;

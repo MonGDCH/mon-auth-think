@@ -7,7 +7,7 @@ namespace mon\auth\tests\api\driver;
 use PHPUnit\Framework\TestCase;
 use mon\auth\api\driver\AccessToken;
 use mon\util\Nbed64;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * AccessToken驱动 P0回归测试：IP校验、缺字段防护、过期拒绝
@@ -45,8 +45,8 @@ class AccessTokenTest extends TestCase
         $char = $token[$pos] === 'A' ? 'B' : 'A';
         $tampered = substr($token, 0, $pos) . $char . substr($token, $pos + 1);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $driver->parse($tampered, 'secret456');
     }
 
@@ -56,8 +56,8 @@ class AccessTokenTest extends TestCase
         $token = $driver->create('APP001', 'secret456', [], '127.0.0.1', 60);
 
         $other = new AccessToken('other_salt');
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $other->parse($token, 'secret456');
     }
 
@@ -66,8 +66,8 @@ class AccessTokenTest extends TestCase
         $driver = $this->driver();
         $token = $driver->create('APP001', 'secret456', [], '127.0.0.1', 60);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_FAILD);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_FAILD);
         $driver->getData($token, 'APP002', 'secret456', '127.0.0.1');
     }
 
@@ -76,8 +76,8 @@ class AccessTokenTest extends TestCase
         $driver = $this->driver();
         $token = $driver->create('APP001', 'secret456', [], '127.0.0.1', 60);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_INVALID);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_INVALID);
         $driver->getData($token, 'APP001', 'secret456', '192.168.1.1');
     }
 
@@ -90,8 +90,8 @@ class AccessTokenTest extends TestCase
         // 合法加密但缺少expire/ip字段的数据
         $minimal = Nbed64::stringEncrypt(json_encode(['app_id' => 'APP001']), $this->salt . 'secret456');
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $driver->getData($minimal, 'APP001', 'secret456', '127.0.0.1');
     }
 
@@ -110,8 +110,8 @@ class AccessTokenTest extends TestCase
         ]);
         $token = \mon\util\Nbed64::stringEncrypt($raw, $driver->getSalt() . 'secret456');
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_INVALID);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_INVALID);
         $driver->getData($token, 'APP001', 'secret456', '127.0.0.1');
     }
 }

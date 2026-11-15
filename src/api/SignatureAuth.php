@@ -6,7 +6,7 @@ namespace mon\auth\api;
 
 use mon\util\Instance;
 use mon\auth\api\driver\Signature;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 use mon\auth\api\contract\NonceStore;
 
 /**
@@ -101,7 +101,7 @@ class SignatureAuth extends ApiAuth
     public function create(string $app_id, string $secret, array $data = []): array
     {
         if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
+            throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
         }
 
         return $this->getDriver()->create($app_id, $secret, $data);
@@ -112,7 +112,7 @@ class SignatureAuth extends ApiAuth
      *
      * @param string $app_id    应用ID
      * @param array $data       需要签名的数据
-     * @throws APIException
+     * @throws ApiException
      * @return array
      */
     public function createToken(string $app_id, array $data = []): array
@@ -133,7 +133,7 @@ class SignatureAuth extends ApiAuth
     public function check(string $secret, array $data): bool
     {
         if (!$this->isInit()) {
-            throw new APIException('未初始化权限控制', APIException::AUTH_INIT_ERROR);
+            throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
         }
 
         // 验证签名（签名不匹配时驱动会直接抛出异常）
@@ -143,18 +143,18 @@ class SignatureAuth extends ApiAuth
         $field = $this->getConfig('field');
         $timestamp = isset($data[$field['timestamp']]) ? intval($data[$field['timestamp']]) : 0;
         if ($timestamp <= 0 || abs(time() - $timestamp) > $this->getConfig('expire')) {
-            throw new APIException('API签名已过期', APIException::SIGN_TIME_INVALID);
+            throw new ApiException('API签名已过期', ApiException::SIGN_TIME_INVALID);
         }
 
         // 验证nonce防重放（配置了nonce_store时启用），顺序：先验签和有效期，再占位nonce，避免非法请求灌爆存储
         $store = $this->getConfig('nonce_store');
         if (!is_null($store)) {
             if (!$store instanceof NonceStore) {
-                throw new APIException('nonce_store配置必须实现 NonceStore 契约', APIException::DAO_NOT_SUPPORT);
+                throw new ApiException('nonce_store配置必须实现 NonceStore 契约', ApiException::DAO_NOT_SUPPORT);
             }
             $nonce = isset($data[$field['noncestr']]) ? strval($data[$field['noncestr']]) : '';
             if ($nonce === '' || !$store->put(strval($data[$field['app_id']]), $nonce, $this->getConfig('expire'))) {
-                throw new APIException('API签名重复提交', APIException::SIGN_REPLAY);
+                throw new ApiException('API签名重复提交', ApiException::SIGN_REPLAY);
             }
         }
 
@@ -172,7 +172,7 @@ class SignatureAuth extends ApiAuth
         $field = $this->getConfig('field');
         $app_id = $data[$field['app_id']] ?? null;
         if (empty($app_id)) {
-            throw new APIException('无效签名', APIException::APPID_PARAMS_FAILD);
+            throw new ApiException('无效签名', ApiException::APPID_PARAMS_FAILD);
         }
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
@@ -190,7 +190,7 @@ class SignatureAuth extends ApiAuth
         // 禁止使用库内置的公开默认盐，否则所有使用该库的项目共享同一个公开密钥，签名可被伪造
         $salt = (string) $this->getConfig('salt');
         if ($salt === '' || in_array($salt, static::BUILTIN_SALTS, true)) {
-            throw new APIException('未配置有效的Signature加密盐（禁止使用库内置默认盐）', APIException::AUTH_INIT_ERROR);
+            throw new ApiException('未配置有效的Signature加密盐（禁止使用库内置默认盐）', ApiException::AUTH_INIT_ERROR);
         }
         // 获取Signature实例
         $this->driver = new Signature($this->getConfig('salt'), $this->getConfig('field'), [

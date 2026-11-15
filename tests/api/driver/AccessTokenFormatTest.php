@@ -6,7 +6,7 @@ namespace mon\auth\tests\api\driver;
 
 use PHPUnit\Framework\TestCase;
 use mon\auth\api\driver\AccessToken;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * AccessToken AES-256-GCM 与旧格式双读迁移测试
@@ -30,7 +30,7 @@ class AccessTokenFormatTest extends TestCase
 
     public function testUnsupportedFormatRejected(): void
     {
-        $this->expectException(APIException::class);
+        $this->expectException(ApiException::class);
         $this->driver(['format' => 'md5']);
     }
 
@@ -72,8 +72,8 @@ class AccessTokenFormatTest extends TestCase
         $char = $body[$pos] === 'A' ? 'B' : 'A';
         $tampered = AccessToken::TOKEN_PREFIX . substr($body, 0, $pos) . $char . substr($body, $pos + 1);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $driver->parse($tampered, $this->secret);
     }
 
@@ -83,7 +83,7 @@ class AccessTokenFormatTest extends TestCase
         $driver = $this->driver();
         $token = $driver->create('APP001', $this->secret, [], '127.0.0.1', 60);
 
-        $this->expectException(APIException::class);
+        $this->expectException(ApiException::class);
         $driver->parse($token . 'zzz', $this->secret);
     }
 
@@ -92,8 +92,8 @@ class AccessTokenFormatTest extends TestCase
         $driver = $this->driver();
         $token = $driver->create('APP001', $this->secret, [], '127.0.0.1', 60);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $driver->parse($token, 'wrong_secret');
     }
 
@@ -103,8 +103,8 @@ class AccessTokenFormatTest extends TestCase
         $driver = $this->driver();
         $token = AccessToken::TOKEN_PREFIX . 'aGVsbG8=';
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $driver->parse($token, $this->secret);
     }
 
@@ -132,8 +132,8 @@ class AccessTokenFormatTest extends TestCase
         $token = $legacy->create('APP001', $this->secret, [], '127.0.0.1', 60);
 
         $strict = $this->driver(['legacy_parse' => false]);
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_ERROR);
         $strict->parse($token, $this->secret);
     }
 

@@ -6,7 +6,7 @@ namespace mon\auth\tests\api;
 
 use PHPUnit\Framework\TestCase;
 use mon\auth\api\AccessTokenAuth;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * AccessTokenAuth 全链路测试（ArrayDao数据源）
@@ -45,16 +45,16 @@ class AccessTokenAuthTest extends TestCase
         $auth = $this->auth();
         $token = $auth->createToken('APP001', '127.0.0.1');
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::ACCESS_TOKEN_INVALID);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::ACCESS_TOKEN_INVALID);
         $auth->getTokenData($token, 'APP001', '10.0.0.1');
     }
 
     public function testUnknownAppRejected(): void
     {
         $auth = $this->auth();
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::APPID_NOT_FOUND);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::APPID_NOT_FOUND);
         $auth->createToken('APP404', '127.0.0.1');
     }
 
@@ -73,8 +73,8 @@ class AccessTokenAuthTest extends TestCase
             ],
         ]);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::APPID_STATUS_ERROR);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::APPID_STATUS_ERROR);
         $auth->createToken('APP001', '127.0.0.1');
     }
 

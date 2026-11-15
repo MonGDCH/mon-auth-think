@@ -7,7 +7,7 @@ namespace mon\auth\tests\api;
 use PHPUnit\Framework\TestCase;
 use mon\auth\api\SignatureAuth;
 use mon\auth\api\contract\NonceStore;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * 测试用内存nonce存储
@@ -74,8 +74,8 @@ class SignatureAuthTest extends TestCase
         $data = $auth->createToken('APP001', ['a' => 1]);
         $data['a'] = 2;
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_VERIFY_FAIL);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_VERIFY_FAIL);
         $auth->checkToken($data);
     }
 
@@ -86,7 +86,7 @@ class SignatureAuthTest extends TestCase
         // 直接篡改时间戳会破坏签名，因此签名校验先拒绝
         $data['timestamp'] = time() - 99999;
 
-        $this->expectException(APIException::class);
+        $this->expectException(ApiException::class);
         $auth->checkToken($data);
     }
 
@@ -100,16 +100,16 @@ class SignatureAuthTest extends TestCase
         $data = $auth->createToken('APP001');
         unset($data['timestamp']);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_VERIFY_FAIL);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_VERIFY_FAIL);
         $auth->checkToken($data);
     }
 
     public function testCheckTokenMissingAppIdRejected(): void
     {
         $auth = $this->auth();
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::APPID_PARAMS_FAILD);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::APPID_PARAMS_FAILD);
         $auth->checkToken(['signature' => 'x']);
     }
 
@@ -119,8 +119,8 @@ class SignatureAuthTest extends TestCase
         $data = $auth->createToken('APP001');
         $data['app_id'] = 'APP404';
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::APPID_NOT_FOUND);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::APPID_NOT_FOUND);
         $auth->checkToken($data);
     }
 
@@ -143,8 +143,8 @@ class SignatureAuthTest extends TestCase
         $this->assertCount(1, $store->store);
 
         // 同一签名数据重放被拒绝
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_REPLAY);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_REPLAY);
         $auth->checkToken($data);
     }
 
@@ -156,8 +156,8 @@ class SignatureAuthTest extends TestCase
         $data = $auth->createToken('APP001');
         unset($data['noncestr']);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_VERIFY_FAIL);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_VERIFY_FAIL);
         $auth->checkToken($data);
         $this->assertCount(0, $store->store);
     }
@@ -167,8 +167,8 @@ class SignatureAuthTest extends TestCase
         $auth = $this->auth(['nonce_store' => new \stdClass()]);
         $data = $auth->createToken('APP001');
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::DAO_NOT_SUPPORT);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::DAO_NOT_SUPPORT);
         $auth->checkToken($data);
     }
 
@@ -182,8 +182,8 @@ class SignatureAuthTest extends TestCase
         try {
             $auth->checkToken($data);
             $this->fail('应抛出签名错误异常');
-        } catch (APIException $e) {
-            $this->assertSame(APIException::SIGN_VERIFY_FAIL, $e->getCode());
+        } catch (ApiException $e) {
+            $this->assertSame(ApiException::SIGN_VERIFY_FAIL, $e->getCode());
         }
         // 验签失败不应占位nonce
         $this->assertCount(0, $store->store);

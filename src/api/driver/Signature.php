@@ -7,7 +7,7 @@ namespace mon\auth\api\driver;
 use mon\util\Event;
 use mon\util\Instance;
 use mon\auth\api\contract\Driver;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * 接口 Signature 签名验证
@@ -137,7 +137,7 @@ class Signature implements Driver
     {
         $sign = $data[$this->getField('signature')] ?? '';
         if (empty($sign)) {
-            throw new APIException('API签名不存在', APIException::SIGN_NOT_FOUND);
+            throw new ApiException('API签名不存在', ApiException::SIGN_NOT_FOUND);
         }
         unset($data[$this->getField('signature')]);
 
@@ -148,10 +148,10 @@ class Signature implements Driver
             $verified = hash_equals($this->getSignMd5($data, $secret), (string) $sign);
         }
         if (!$verified) {
-            throw new APIException('API签名错误', APIException::SIGN_VERIFY_FAIL);
+            throw new ApiException('API签名错误', ApiException::SIGN_VERIFY_FAIL);
         }
 
-        // 触发AccessToken验证事件，回调方法可通过 throw APIException 增加自定义的验证方式
+        // 触发AccessToken验证事件，回调方法可通过 throw ApiException 增加自定义的验证方式
         Event::instance()->trigger('sign_check', $data);
 
         return true;

@@ -60,7 +60,7 @@ class AccessTokenService
      * @param string $secret    应用秘钥
      * @param string $ip        签发ip地址
      * @param array $extend     扩展数据
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return string
      */
     public function create(string $app_id, string $secret,  string $ip = '', array $extend = []): string
@@ -74,7 +74,7 @@ class AccessTokenService
      * @param string $app_id    应用ID
      * @param string $ip        签发ip地址
      * @param array $extend     扩展数据
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return string
      */
     public function createToken(string $app_id, string $ip = '', array $extend = []): string
@@ -89,7 +89,7 @@ class AccessTokenService
      * @param string $app_id    应用ID
      * @param string $ip        请求ip地址
      * @param string $secret    应用秘钥
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return array
      */
     public function getData(string $token, string $app_id, string $secret, string $ip = ''): array
@@ -103,7 +103,7 @@ class AccessTokenService
      * @param string $token     Token
      * @param string $ip        请求ip地址
      * @param string $app_id    应用ID
-     * @throws \mon\auth\exception\APIException
+     * @throws \mon\auth\exception\ApiException
      * @return array
      */
     public function getTokenData(string $token, string $app_id, string $ip = ''): array

@@ -6,7 +6,7 @@ namespace mon\auth\tests\api\driver;
 
 use PHPUnit\Framework\TestCase;
 use mon\auth\api\driver\Signature;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 
 /**
  * API签名驱动 P0回归测试：P0-1 签名篡改/错误秘钥必须拒绝
@@ -46,8 +46,8 @@ class SignatureTest extends TestCase
         $data = $driver->create('APP001', $this->secret, ['foo' => 'bar', 'amount' => 100]);
         $data['amount'] = 999999; // 篡改业务参数
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_VERIFY_FAIL);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_VERIFY_FAIL);
         $driver->check($this->secret, $data);
     }
 
@@ -59,8 +59,8 @@ class SignatureTest extends TestCase
         $driver = $this->driver();
         $data = $driver->create('APP001', $this->secret);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_VERIFY_FAIL);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_VERIFY_FAIL);
         $driver->check('wrong_secret', $data);
     }
 
@@ -69,8 +69,8 @@ class SignatureTest extends TestCase
         $data = $this->driver()->create('APP001', $this->secret);
         unset($data['signature']);
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_NOT_FOUND);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_NOT_FOUND);
         $this->driver()->check($this->secret, $data);
     }
 
@@ -80,8 +80,8 @@ class SignatureTest extends TestCase
         $data = $driver->create('APP001', $this->secret);
         $data['timestamp'] = time() + 999;
 
-        $this->expectException(APIException::class);
-        $this->expectExceptionCode(APIException::SIGN_VERIFY_FAIL);
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::SIGN_VERIFY_FAIL);
         $driver->check($this->secret, $data);
     }
 

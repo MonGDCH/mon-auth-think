@@ -100,6 +100,12 @@ class Install
         foreach (static::$config_relation as $source => $dest) {
             $sourceFile = $source_path . $source;
             $destFile = ROOT_PATH . DIRECTORY_SEPARATOR . $dest;
+            // 已存在的配置直接跳过：避免重新生成密钥/盐导致存量Token全部失效，
+            // 常驻进程滚动reload期间新旧worker密钥不一致还会出现随机401
+            if (file_exists($destFile)) {
+                echo 'Skip File ' . $destFile . " (already exists, delete it manually if you need to regenerate the key)\r\n";
+                continue;
+            }
             $content = File::read($sourceFile);
             // 绑定key值
             $content = sprintf($content, static::getKey());
@@ -111,9 +117,9 @@ class Install
     /**
      * 获取生成的随机key
      *
-     * @return void
+     * @return string
      */
-    protected static function getKey()
+    protected static function getKey(): string
     {
         return Common::randString(24, 5, '~!@#{}|$^&*()-_+%`');
     }

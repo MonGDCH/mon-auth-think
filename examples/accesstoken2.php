@@ -1,7 +1,7 @@
 <?php
 
 use mon\auth\api\AccessTokenAuth;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 use think\facade\Db;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -113,7 +113,7 @@ try {
 
     $data = AccessTokenAuth::instance()->checkToken($token, $appid);
     dd($data);
-} catch (APIException $e) {
+} catch (ApiException $e) {
     dd('[error] ' . $e->getMessage() . ' code: ' . $e->getCode());
     // 异常绑定的数据
     dd($e->getData());

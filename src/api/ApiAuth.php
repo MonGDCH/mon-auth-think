@@ -4,7 +4,7 @@ namespace mon\auth\api;
 
 use mon\auth\api\contract\Dao;
 use mon\auth\api\contract\Driver;
-use mon\auth\exception\APIException;
+use mon\auth\exception\ApiException;
 use mon\auth\api\contract\ApiAuth as ApiAuthInterface;
 
 /**
@@ -92,7 +92,7 @@ abstract class ApiAuth implements ApiAuthInterface
     /**
      * 初始化Dao驱动
      *
-     * @throws APIException
+     * @throws ApiException
      * @return void
      */
     protected function initDao()
@@ -100,7 +100,7 @@ abstract class ApiAuth implements ApiAuthInterface
         $config = $this->getConfig('dao');
         $driver = $config['driver'];
         if (!is_subclass_of($driver, Dao::class)) {
-            throw new APIException('Dao驱动未实现接口[' . Dao::class . ']', APIException::DAO_NOT_SUPPORT);
+            throw new ApiException('Dao驱动未实现接口[' . Dao::class . ']', ApiException::DAO_NOT_SUPPORT);
         }
 
         $construct = $config['construct'];
@@ -152,13 +152,13 @@ abstract class ApiAuth implements ApiAuthInterface
         // 获取应用信息
         $info = $this->getDao()->getInfo($app_id);
         if (!$info) {
-            throw new APIException('APPID不存在', APIException::APPID_NOT_FOUND);
+            throw new ApiException('APPID不存在', ApiException::APPID_NOT_FOUND);
         }
         if (!$this->getDao()->effect($info)) {
-            throw new APIException('APPID无效', APIException::APPID_STATUS_ERROR);
+            throw new ApiException('APPID无效', ApiException::APPID_STATUS_ERROR);
         }
         if (!$this->getDao()->expire($info)) {
-            throw new APIException('APPID已过期', APIException::APPID_TIME_INVALID);
+            throw new ApiException('APPID已过期', ApiException::APPID_TIME_INVALID);
         }
 
         return $info;
