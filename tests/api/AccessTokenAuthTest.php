@@ -131,11 +131,11 @@ class AccessTokenAuthTest extends TestCase
         $this->assertSame('api', $data['scope']);
     }
 
-    public function testPublishPlaceholderSaltRejected(): void
+    public function testEmptySaltRejected(): void
     {
-        // 发布占位符'%s'（跳过vendor:publish时的兜底值）必须fail-closed，防公开字面量盐上线
+        // 盐必须显式配置，默认空值时fail-closed拒绝初始化
         $this->expectException(ApiException::class);
         $this->expectExceptionCode(ApiException::AUTH_INIT_ERROR);
-        $this->auth(['salt' => '%s']);
+        $this->auth(['salt' => '']);
     }
 }

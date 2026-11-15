@@ -2,6 +2,8 @@
 
 namespace mon\auth\exception;
 
+use Throwable;
+
 /**
  * JWT异常
  * 
@@ -98,7 +100,7 @@ class JwtException extends AuthException
      * @param array $data       异常绑定数据
      * @param Throwable $previous  异常
      */
-    public function __construct(string $message, int $code = 0, int $status = 401, array $data = [], ?\Throwable $previous = null)
+    public function __construct(string $message, int $code = 0, int $status = 401, array $data = [], ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $status, $data, $previous);
     }

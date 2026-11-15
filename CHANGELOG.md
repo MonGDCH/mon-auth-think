@@ -9,7 +9,7 @@
 - **修复JWT未鉴权TypeError**：`Token::getData()` 对payload为JSON标量（如`123`）的token，在**签名校验之前**返回非数组并触发`TypeError`，可被未鉴权请求利用造成持续500。现统一抛出`JWT_TOKEN_PAYLOAD_ERROR`；同时补充header的`typ`校验与`alg`缺失防护，防跨协议拼接；
 - **修复JWT签发TypeError**：扩展数据包含非法UTF-8字符时`json_encode`返回false直接触发`TypeError`，现抛出`JWT_ENCODE_ERROR`；
 - **修复签名时间窗单边校验**：原实现仅校验`time() > timestamp + expire`，**未来时间戳的签名永久有效**。现改为双向窗口`abs(time() - timestamp) > expire`；
-- **移除内置默认盐，必须显式配置**：`AccessTokenAuth`/`SignatureAuth`及其驱动的默认salt改为空值，未配置盐初始化时直接抛出异常（驱动构造与`setSalt`同步拦截，双保险）；同时检测库内置公开盐（如`a!khg#-$%iu_ow1.08`、`df2!)*&+sdfg_687#@`）或发布占位符`'%s'`（跳过`vendor:publish`直接上线的兜底值）时同样拒绝初始化，避免公开字面量密钥导致Token/签名可被伪造；accesstoken配置模板内置的有效测试凭据（`TEST123456789`）同步移除，示例改为注释；
+- **移除内置默认盐，必须显式配置**：`AccessTokenAuth`/`SignatureAuth`及其驱动的默认salt改为空值，未配置盐初始化时直接抛出异常（驱动构造与`setSalt`同步拦截，双保险）；原公开默认盐常量与`BUILTIN_SALTS`黑名单一并移除，库中不再保留任何内置盐字面量，避免公开密钥导致Token/签名可被伪造；accesstoken配置模板内置的有效测试凭据（`TEST123456789`）同步移除，示例改为注释；
 - **修复RBAC权限校验fail-open**：`Auth::check()`传入空规则数组且`relation=false`时，`array_diff([], [])`为空导致直接放行。现先规范化规则，空规则列表按无权限处理（fail-closed）；
 - **超管标志与规则匹配改为严格比较**：消除PHP松散比较下`'*'`与数字规则ID的误判隐患。
 

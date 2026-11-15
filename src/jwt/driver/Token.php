@@ -120,7 +120,7 @@ class Token
     /**
      * 验证jwt-payload
      *
-     * @param string $payload   jwt的payload内容
+     * @param array $payload   jwt的payload内容
      * @throws JwtException
      * @return boolean
      */

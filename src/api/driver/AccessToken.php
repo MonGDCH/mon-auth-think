@@ -228,7 +228,7 @@ class AccessToken implements Driver
      * 根据token前缀自动识别格式：v2.前缀为AES-256-GCM格式，其余按旧版Nbed64格式解析（需开启legacy_parse）
      *
      * @param string $token token
-     * @param string $salt  应用秘钥
+     * @param string $secret  应用秘钥
      * @throws ApiException
      * @return array    token数据
      */

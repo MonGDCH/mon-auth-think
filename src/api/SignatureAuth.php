@@ -20,11 +20,6 @@ class SignatureAuth extends ApiAuth
     use Instance;
 
     /**
-     * 库内置的公开默认盐与发布占位符，禁止用于生产环境
-     */
-    const BUILTIN_SALTS = ['%s', 'df2!)*&+sdfg_687#@', 'df2!)*&+sdfg_dfg687#@'];
-
-    /**
      * 配置信息
      *
      * @var array
@@ -187,10 +182,10 @@ class SignatureAuth extends ApiAuth
      */
     protected function initDriver()
     {
-        // 禁止使用库内置的公开默认盐及发布占位符'%s'（跳过vendor:publish直接上线时盐为公开字面量，签名可被伪造）
+        // 盐必须显式配置，未配置（默认空值）时直接拒绝初始化
         $salt = (string) $this->getConfig('salt');
-        if ($salt === '' || in_array($salt, static::BUILTIN_SALTS, true)) {
-            throw new ApiException('未配置有效的Signature加密盐（禁止使用库内置默认盐）', ApiException::AUTH_INIT_ERROR);
+        if ($salt === '') {
+            throw new ApiException('未配置有效的Signature加密盐', ApiException::AUTH_INIT_ERROR);
         }
         // 获取Signature实例
         $this->driver = new Signature($this->getConfig('salt'), $this->getConfig('field'), [
