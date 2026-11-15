@@ -27,6 +27,20 @@ class Signature implements Driver
     protected $encrypt_salt = 'df2!)*&+sdfg_dfg687#@';
 
     /**
+     * 签名算法：md5（历史默认，保持向后兼容）| hmac-sha256（推荐）
+     *
+     * @var string
+     */
+    protected $alg = 'md5';
+
+    /**
+     * 校验时是否兼容旧版md5签名（alg为hmac-sha256时生效）
+     *
+     * @var boolean
+     */
+    protected $accept_legacy = true;
+
+    /**
      * 字段名映射
      *
      * @var array
@@ -47,12 +61,20 @@ class Signature implements Driver
     /**
      * 构造方法
      *
+     * @param string $salt      加密盐
      * @param array $field_map  字段名映射
+     * @param array $options    扩展配置：alg(md5|hmac-sha256，默认md5保持向后兼容)、accept_legacy(是否兼容校验旧版md5签名)
      */
-    public function __construct(string $salt = 'df2!)*&+sdfg_dfg687#@', array $field_map = [])
+    public function __construct(string $salt = 'df2!)*&+sdfg_dfg687#@', array $field_map = [], array $options = [])
     {
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
+        if (isset($options['alg'])) {
+            $this->alg = strtolower((string) $options['alg']) === 'hmac-sha256' ? 'hmac-sha256' : 'md5';
+        }
+        if (isset($options['accept_legacy'])) {
+            $this->accept_legacy = (bool) $options['accept_legacy'];
+        }
     }
 
     /**
@@ -119,8 +141,13 @@ class Signature implements Driver
         }
         unset($data[$this->getField('signature')]);
 
-        // 验证签名有效性，签名不匹配直接拒绝
-        if ($sign !== $this->getSign($data, $secret)) {
+        // 验证签名有效性（恒时比较，防止时序攻击），签名不匹配直接拒绝
+        $verified = hash_equals($this->getSign($data, $secret), (string) $sign);
+        if (!$verified && $this->alg === 'hmac-sha256' && $this->accept_legacy) {
+            // 客户端未升级时兼容校验旧版md5签名，全部客户端升级后建议关闭
+            $verified = hash_equals($this->getSignMd5($data, $secret), (string) $sign);
+        }
+        if (!$verified) {
             throw new APIException('API签名错误', APIException::SIGN_VERIFY_FAIL);
         }
 
@@ -164,9 +191,33 @@ class Signature implements Driver
         $string = http_build_query($data);
         // 签名步骤二：在string后加入KEY
         $string = $string . "&{$key}=" . $this->getSecret($secret);
+
+        if ($this->alg === 'hmac-sha256') {
+            // HMAC-SHA256：密钥不参与拼接，避免弱摘要问题
+            return strtoupper(hash_hmac('sha256', $string, $this->getSecret($secret)));
+        }
+
         // 签名步骤三：md5加密
         $string = md5($string);
         // 签名步骤四：所有字符转为大写
         return strtoupper($string);
+    }
+
+    /**
+     * 生成旧版md5签名（仅用于兼容校验）
+     *
+     * @param array $data     生成签名用的数据
+     * @param string $secret  应用秘钥
+     * @param string $key     签名的key名
+     * @return string
+     */
+    protected function getSignMd5(array $data, string $secret, string $key = ''): string
+    {
+        $key = $key ?: $this->getField('secret');
+        ksort($data);
+        $string = http_build_query($data);
+        $string = $string . "&{$key}=" . $this->getSecret($secret);
+
+        return strtoupper(md5($string));
     }
 }

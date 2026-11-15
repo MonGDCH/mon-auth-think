@@ -20,6 +20,11 @@ class SignatureAuth extends ApiAuth
     use Instance;
 
     /**
+     * 库内置的公开默认盐，禁止用于生产环境
+     */
+    const BUILTIN_SALTS = ['df2!)*&+sdfg_687#@', 'df2!)*&+sdfg_dfg687#@'];
+
+    /**
      * 配置信息
      *
      * @var array
@@ -27,6 +32,10 @@ class SignatureAuth extends ApiAuth
     protected $config = [
         // 默认加密盐
         'salt'  => 'df2!)*&+sdfg_687#@',
+        // 签名算法：md5（历史默认，保持向后兼容）| hmac-sha256（推荐，新接入方建议使用）
+        'alg'   => 'md5',
+        // alg为hmac-sha256时，是否兼容校验旧版md5签名，客户端全部升级后建议关闭
+        'accept_legacy' => true,
         // 字段映射
         'field' => [
             // app_id字段名
@@ -130,10 +139,10 @@ class SignatureAuth extends ApiAuth
         // 验证签名（签名不匹配时驱动会直接抛出异常）
         $this->getDriver()->check($secret, $data);
 
-        // 验证签名有效期
+        // 验证签名有效期（双向窗口：既拒绝过期请求，也拒绝超前的时间戳，防止未来时间戳长期有效）
         $field = $this->getConfig('field');
         $timestamp = isset($data[$field['timestamp']]) ? intval($data[$field['timestamp']]) : 0;
-        if ($timestamp <= 0 || time() > ($timestamp + $this->getConfig('expire'))) {
+        if ($timestamp <= 0 || abs(time() - $timestamp) > $this->getConfig('expire')) {
             throw new APIException('API签名已过期', APIException::SIGN_TIME_INVALID);
         }
 
@@ -178,7 +187,15 @@ class SignatureAuth extends ApiAuth
      */
     protected function initDriver()
     {
-        // 获取AccessToken实例
-        $this->driver = new Signature($this->getConfig('salt'), $this->getConfig('field'));
+        // 禁止使用库内置的公开默认盐，否则所有使用该库的项目共享同一个公开密钥，签名可被伪造
+        $salt = (string) $this->getConfig('salt');
+        if ($salt === '' || in_array($salt, static::BUILTIN_SALTS, true)) {
+            throw new APIException('未配置有效的Signature加密盐（禁止使用库内置默认盐）', APIException::AUTH_INIT_ERROR);
+        }
+        // 获取Signature实例
+        $this->driver = new Signature($this->getConfig('salt'), $this->getConfig('field'), [
+            'alg'           => (string) $this->getConfig('alg'),
+            'accept_legacy' => (bool) $this->getConfig('accept_legacy'),
+        ]);
     }
 }

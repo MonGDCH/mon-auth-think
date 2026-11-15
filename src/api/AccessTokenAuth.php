@@ -19,6 +19,11 @@ class AccessTokenAuth extends ApiAuth
     use Instance;
 
     /**
+     * 库内置的公开默认盐，禁止用于生产环境
+     */
+    const BUILTIN_SALTS = ['a!khg#-$%iu_ow1.08', 'a!a05kh(g#-$%iu_ow1.08'];
+
+    /**
      * 配置信息
      *
      * @var array
@@ -157,6 +162,11 @@ class AccessTokenAuth extends ApiAuth
      */
     protected function initDriver()
     {
+        // 禁止使用库内置的公开默认盐，否则所有使用该库的项目共享同一个公开密钥，Token可被伪造
+        $salt = (string) $this->getConfig('salt');
+        if ($salt === '' || in_array($salt, static::BUILTIN_SALTS, true)) {
+            throw new APIException('未配置有效的AccessToken加密盐（禁止使用库内置默认盐）', APIException::AUTH_INIT_ERROR);
+        }
         // 获取AccessToken实例
         $this->driver = new AccessToken($this->getConfig('salt'), $this->getConfig('field'), [
             'format'        => $this->getConfig('token_format'),
