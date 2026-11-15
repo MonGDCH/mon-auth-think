@@ -28,8 +28,8 @@ class RbacMiddleware implements Middlewareinterface
      */
     public function process(RequestInterface $request, Closure $callback): Response
     {
-        // 验证登录
-        if (!$request->uid) {
+        // 验证登录（uid=0也是合法ID，不能使用truthy判断；isset避免读取未定义动态属性触发deprecation）
+        if (!isset($request->uid) || $request->uid === null || $request->uid === '') {
             // 不存在用户ID，未登录
             throw new RbacException('请先登录');
         }

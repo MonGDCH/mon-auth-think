@@ -28,11 +28,9 @@ class SignatureMiddleware implements Middlewareinterface
      */
     public function process(RequestInterface $request, Closure $callback): Response
     {
-        // 验证签名
-        $check = SignatureService::instance()->checkToken($request->post());
-        if (!$check) {
-            throw new ApiException('无效的App signature数据');
-        }
+        // 验证签名：签名数据取自POST表单（如需支持JSON body或GET，请自行组装数据后调用 SignatureService::checkToken）
+        // checkToken内部已区分参数缺失(APPID_PARAMS_FAILD)、签名错误(SIGN_VERIFY_FAIL)等异常，校验失败直接抛出
+        SignatureService::instance()->checkToken($request->post());
 
         return $callback($request);
     }

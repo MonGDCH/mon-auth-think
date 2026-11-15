@@ -48,10 +48,13 @@ class DbRbacCommand extends Command
      */
     public function execute(Input $in, Output $out)
     {
-        // 表名
-        $auth_role = Config::instance()->get('auth.rbac.auth_role', 'auth_role');
-        $auth_access = Config::instance()->get('auth.rbac.auth_role_access', 'auth_access');
-        $auth_rule = Config::instance()->get('auth.rbac.auth_rule', 'auth_rule');
+        // 表名（反引号转义，避免配置值含反引号破坏DDL）
+        $auth_role = str_replace('`', '``', Config::instance()->get('auth.rbac.auth_role', 'auth_role'));
+        $auth_access = str_replace('`', '``', Config::instance()->get('auth.rbac.auth_role_access', 'auth_access'));
+        $auth_rule = str_replace('`', '``', Config::instance()->get('auth.rbac.auth_rule', 'auth_rule'));
+
+        // 与其他db*命令保持一致，显式初始化数据库连接配置
+        Db::setConfig(Config::instance()->get('database', []));
 
         // 角色表
         $roleSql = <<<SQL

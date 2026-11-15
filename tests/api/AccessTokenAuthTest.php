@@ -13,9 +13,9 @@ use mon\auth\exception\ApiException;
  */
 class AccessTokenAuthTest extends TestCase
 {
-    protected function auth(): AccessTokenAuth
+    protected function auth(array $extra = []): AccessTokenAuth
     {
-        return new AccessTokenAuth([
+        $config = array_merge([
             'salt'  => 'test_salt',
             'expire'    => 60,
             'dao' => [
@@ -26,7 +26,8 @@ class AccessTokenAuthTest extends TestCase
                     ],
                 ],
             ],
-        ]);
+        ], $extra);
+        return new AccessTokenAuth($config);
     }
 
     public function testCreateAndGetTokenDataRoundTrip(): void
@@ -128,5 +129,13 @@ class AccessTokenAuthTest extends TestCase
         $token = $auth->createToken('APP001', '127.0.0.1', ['scope' => 'api']);
         $data = $auth->getTokenData($token, 'APP001', '127.0.0.1');
         $this->assertSame('api', $data['scope']);
+    }
+
+    public function testPublishPlaceholderSaltRejected(): void
+    {
+        // 发布占位符'%s'（跳过vendor:publish时的兜底值）必须fail-closed，防公开字面量盐上线
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::AUTH_INIT_ERROR);
+        $this->auth(['salt' => '%s']);
     }
 }

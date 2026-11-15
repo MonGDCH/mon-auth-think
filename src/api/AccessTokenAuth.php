@@ -19,9 +19,9 @@ class AccessTokenAuth extends ApiAuth
     use Instance;
 
     /**
-     * 库内置的公开默认盐，禁止用于生产环境
+     * 库内置的公开默认盐与发布占位符，禁止用于生产环境
      */
-    const BUILTIN_SALTS = ['a!khg#-$%iu_ow1.08', 'a!a05kh(g#-$%iu_ow1.08'];
+    const BUILTIN_SALTS = ['%s', 'a!khg#-$%iu_ow1.08', 'a!a05kh(g#-$%iu_ow1.08'];
 
     /**
      * 配置信息
@@ -113,6 +113,10 @@ class AccessTokenAuth extends ApiAuth
      */
     public function createToken(string $app_id, string $ip = '', array $extend = []): string
     {
+        if (!$this->isInit()) {
+            throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
+        }
+
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
 
@@ -149,6 +153,10 @@ class AccessTokenAuth extends ApiAuth
      */
     public function getTokenData(string $token, string $app_id, string $ip = ''): array
     {
+        if (!$this->isInit()) {
+            throw new ApiException('未初始化权限控制', ApiException::AUTH_INIT_ERROR);
+        }
+
         // 获取应用信息
         $info = $this->getAppInfo($app_id);
 
@@ -162,7 +170,7 @@ class AccessTokenAuth extends ApiAuth
      */
     protected function initDriver()
     {
-        // 禁止使用库内置的公开默认盐，否则所有使用该库的项目共享同一个公开密钥，Token可被伪造
+        // 禁止使用库内置的公开默认盐及发布占位符'%s'（跳过vendor:publish直接上线时盐为公开字面量，Token可被伪造）
         $salt = (string) $this->getConfig('salt');
         if ($salt === '' || in_array($salt, static::BUILTIN_SALTS, true)) {
             throw new ApiException('未配置有效的AccessToken加密盐（禁止使用库内置默认盐）', ApiException::AUTH_INIT_ERROR);

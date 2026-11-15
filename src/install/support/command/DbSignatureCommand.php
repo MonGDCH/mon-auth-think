@@ -63,13 +63,14 @@ CREATE TABLE IF NOT EXISTS `%s` (
   UNIQUE KEY `app_id`(`app_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ApiSignature授权表';
 SQL;
-    // 表名
+    // 表名（反引号转义，避免配置值含反引号破坏DDL）
     $table = Config::instance()->get('auth.signature.dao.construct.table', 'api_sign');
     // 建表sql
-    $sql = sprintf($content, $table);
+    $sql = sprintf($content, str_replace('`', '``', $table));
     // 建表
     Db::setConfig(Config::instance()->get('database', []));
     Db::execute($sql);
-    return $out->block('Create Table `' . $table . '`', 'SUCCESS');
+    $out->block('Create Table `' . $table . '`', 'SUCCESS');
+    return 0;
   }
 }

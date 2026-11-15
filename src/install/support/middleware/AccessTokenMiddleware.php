@@ -32,8 +32,8 @@ class AccessTokenMiddleware implements Middlewareinterface
         $appid = $request->post('app_id', null);
         // Token
         $token = $request->post('access_token', null);
-        // 验证参数
-        if (empty($token) || empty($appid)) {
+        // 验证参数（严格判断，避免"0"值被empty误判为空）
+        if ($token === null || $token === '' || $appid === null || $appid === '') {
             // 不存在APPID或Token
             throw new ApiException('无效的App Access Token数据');
         }

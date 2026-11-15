@@ -37,22 +37,21 @@ class UpdateChildrenServiceTest extends TestCase
     public function testDuplicateIdKeepsLastRecord(): void
     {
         $sql = $this->service()->batchUpdateSql([
-            ['id' => 5, 'pids' => 'first'],
-            ['id' => 5, 'pids' => 'last'],
+            ['id' => 5, 'pids' => '0,1'],
+            ['id' => 5, 'pids' => '0,2'],
         ]);
 
-        $this->assertStringContainsString("'last'", $sql);
-        $this->assertStringNotContainsString("'first'", $sql);
+        $this->assertStringContainsString("'0,2'", $sql);
+        $this->assertStringNotContainsString("'0,1'", $sql);
     }
 
-    public function testStringValuesAreEscaped(): void
+    public function testIllegalStringValueIsRejected(): void
     {
-        $sql = $this->service()->batchUpdateSql([
+        // 值域白名单：含引号等非法字符的注入串直接拒绝（fail-closed），而非转义后嵌入
+        $this->expectException(\mon\auth\exception\RbacException::class);
+        $this->service()->batchUpdateSql([
             ['id' => 1, 'pids' => "0,1' OR '1'='1"],
         ]);
-
-        // 所有单引号被addslashes转义，无法逃逸出字符串字面量
-        $this->assertStringContainsString("0,1\\' OR \\'1\\'=\\'1", $sql);
     }
 
     public function testMultipleIdsInWhereClause(): void

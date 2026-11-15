@@ -243,8 +243,8 @@ class Auth
             $authList[] = $this->config['admin_mark'];
             return $authList;
         }
-        // 获取权限规则
-        $rules = $this->getRule($uid);
+        // 获取权限规则（复用已查得的规则ID，同一请求内不再重复查询访问表）
+        $rules = $this->getRule($uid, $ids);
         foreach ($rules as $rule) {
             if (!$rule) {
                 continue;
@@ -259,12 +259,13 @@ class Auth
      * 获取权限规则
      *
      * @param integer|string $uid  用户ID
+     * @param array|null $ids     规则ID列表，传入时不再重复查询（供getAuthList复用同一请求内的查询结果）
      * @return array
      */
-    public function getRule($uid): array
+    public function getRule($uid, ?array $ids = null): array
     {
         // 获取规则节点
-        $ids = $this->getAuthIds($uid);
+        $ids = $ids ?? $this->getAuthIds($uid);
         if (empty($ids)) {
             return [];
         }

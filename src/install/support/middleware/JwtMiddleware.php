@@ -36,7 +36,10 @@ class JwtMiddleware implements Middlewareinterface
 
         // 验证获取Token数据
         $data = JwtService::instance()->getTokenData($token);
-        // 记录用户ID
+        // 记录用户ID（aud缺失或为空视为无效Token，fail-closed）
+        if (!isset($data['aud']) || $data['aud'] === '' || $data['aud'] === null) {
+            throw new JwtException('Token缺少有效的用户标识');
+        }
         $request->uid = $data['aud'];
         // 记录Token数据
         $request->jwt = $data;

@@ -81,8 +81,8 @@ class UpdateChildrenService
     {
         Db::startTrans();
         try {
-            // 获取父节点的 pids
-            $parent = Db::table($this->table)->field([$this->id, $this->pid, $this->pids])->where($this->id, $newParentId)->find();
+            // 获取父节点的 pids（加锁读取，防止并发移动同一父级节点时pids链错乱）
+            $parent = Db::table($this->table)->field([$this->id, $this->pid, $this->pids])->where($this->id, $newParentId)->lock(true)->find();
             if (!$parent) {
                 throw new RbacException("父节点ID({$newParentId})不存在");
             }
@@ -260,8 +260,10 @@ class UpdateChildrenService
                     // 有该字段的值，使用提供的值
                     $value = $item[$field];
                     if (is_string($value)) {
-                        // 字符串值需要转义
-                        $value = addslashes($value);
+                        // 值域（pids/rules等）为数字与逗号组合，白名单校验防注入，不使用addslashes等脆弱转义
+                        if (!preg_match('/^[0-9,]+$/', $value)) {
+                            throw new RbacException("批量更新字段 {$field} 的值仅支持数字与逗号组合，请检查数据");
+                        }
                         $sql .= "WHEN {$id} THEN '{$value}' ";
                     } elseif (is_int($value) || is_float($value)) {
                         // 数字值直接使用

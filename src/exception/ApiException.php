@@ -68,4 +68,9 @@ class ApiException extends AuthException
      * 签名APPID参数错误
      */
     const APPID_PARAMS_FAILD = 40330;
+
+    /**
+     * 签名nonce存储异常（如Redis不可用）
+     */
+    const SIGN_NONCE_STORE_ERROR = 40240;
 }

@@ -188,4 +188,12 @@ class SignatureAuthTest extends TestCase
         // 验签失败不应占位nonce
         $this->assertCount(0, $store->store);
     }
+
+    public function testPublishPlaceholderSaltRejected(): void
+    {
+        // 发布占位符'%s'（跳过vendor:publish时的兜底值）必须fail-closed，防公开字面量盐上线
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::AUTH_INIT_ERROR);
+        $this->auth(['salt' => '%s']);
+    }
 }

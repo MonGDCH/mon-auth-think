@@ -26,18 +26,18 @@ return [
         'construct'    => [
             // 数组驱动APP应用数据列表，driver驱动为 ArrayDao 时有效
             'data'  => [
-                [
-                    // 应用ID
-                    'app_id'        => 'TEST123456789',
-                    // 应用秘钥
-                    'secret'        => 'klasjhghaalskfjqwpetoijhxc',
-                    // 应用名称
-                    'name'          => '测试',
-                    // 应用状态，1有效 0无效
-                    'status'        => 1,
-                    // 应用过期时间
-                    'expired_time'  => '',
-                ]
+                // [
+                //     // 应用ID
+                //     'app_id'        => 'TEST123456789',
+                //     // 应用秘钥
+                //     'secret'        => 'klasjhghaalskfjqwpetoijhxc',
+                //     // 应用名称
+                //     'name'          => '测试',
+                //     // 应用状态，1有效 0无效
+                //     'status'        => 1,
+                //     // 应用过期时间
+                //     'expired_time'  => '',
+                // ]
             ],
             // 数据库驱动操作表，driver驱动为 DatabaseDao 时有效
             'table'     => 'api_sign',

@@ -179,44 +179,43 @@ class Role extends Dao
             }
         }
 
-        // 更新后代数据
-        $updateChildrenData = [];
-        $sdk = new UpdateChildrenService($this->table);
-        if ($removedPermissions || $updateChildrenInvalidStatus || $updatePids) {
-            // 更新后代数据服务
-            $childrens = $sdk->getTree()->getChildren($idx);
-            // 修改了父级角色
-            if ($updatePids) {
-                // 更新pids
-                $childrenTree = (new Tree(['root' => $idx]))->data($childrens)->getTree();
-                $descendantList = $sdk->getDescendantList($childrenTree, $pids);
-                $updateChildrenData = array_column($descendantList, null, 'id');
-            }
-
-            foreach ($childrens as $child) {
-                $key = $child['id'];
-                // 更新状态
-                if ($updateChildrenInvalidStatus) {
-                    $updateChildrenData[$key]['id'] = $key;
-                    $updateChildrenData[$key]['status'] = $status;
+        // 更新数据（开启事务后再读取子树快照并计算后代更新，缩小并发窗口，快照过期风险由事务内锁复核兜底）
+        $this->startTrans();
+        try {
+            // 更新后代数据
+            $updateChildrenData = [];
+            $sdk = new UpdateChildrenService($this->table);
+            if ($removedPermissions || $updateChildrenInvalidStatus || $updatePids) {
+                // 更新后代数据服务
+                $childrens = $sdk->getTree()->getChildren($idx);
+                // 修改了父级角色
+                if ($updatePids) {
+                    // 更新pids
+                    $childrenTree = (new Tree(['root' => $idx]))->data($childrens)->getTree();
+                    $descendantList = $sdk->getDescendantList($childrenTree, $pids);
+                    $updateChildrenData = array_column($descendantList, null, 'id');
                 }
-                // 判断是否修改减少了权限规则，如果减少了权限规则，需要更新子级角色的权限规则
-                if ($removedPermissions) {
-                    $child_rules = explode(',', $child['rules']);
-                    $new_child_rules = array_diff($child_rules, $removedPermissions);
-                    // 判断是否存在修改
-                    if (count($new_child_rules) != count($child_rules)) {
-                        sort($new_child_rules);
+
+                foreach ($childrens as $child) {
+                    $key = $child['id'];
+                    // 更新状态
+                    if ($updateChildrenInvalidStatus) {
                         $updateChildrenData[$key]['id'] = $key;
-                        $updateChildrenData[$key]['rules'] = implode(',', $new_child_rules);
+                        $updateChildrenData[$key]['status'] = $status;
+                    }
+                    // 判断是否修改减少了权限规则，如果减少了权限规则，需要更新子级角色的权限规则
+                    if ($removedPermissions) {
+                        $child_rules = explode(',', $child['rules']);
+                        $new_child_rules = array_diff($child_rules, $removedPermissions);
+                        // 判断是否存在修改
+                        if (count($new_child_rules) != count($child_rules)) {
+                            sort($new_child_rules);
+                            $updateChildrenData[$key]['id'] = $key;
+                            $updateChildrenData[$key]['rules'] = implode(',', $new_child_rules);
+                        }
                     }
                 }
             }
-        }
-
-        // 更新数据
-        $this->startTrans();
-        try {
             // 并发防护：事务内加锁重读并复核，前面校验阶段读取的数据可能已被并发修改
             $lockedInfo = $this->where(['id' => $idx])->lock(true)->get();
             if (!$lockedInfo

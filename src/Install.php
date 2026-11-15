@@ -109,7 +109,13 @@ class Install
             $content = File::read($sourceFile);
             // 绑定key值
             $content = sprintf($content, static::getKey());
-            File::createFile($content, $destFile, false);
+            // 先写临时文件再原子替换：避免并发publish时半写内容或两份不同密钥交错覆盖（rename在原子性上优于直接覆盖写）
+            $tmpFile = $destFile . '.tmp.' . uniqid('', true);
+            if (File::createFile($content, $tmpFile, false) === false || !rename($tmpFile, $destFile)) {
+                @unlink($tmpFile);
+                echo 'Create File failed: ' . $destFile . "\r\n";
+                continue;
+            }
             echo 'Create File ' . $destFile . "\r\n";
         }
     }

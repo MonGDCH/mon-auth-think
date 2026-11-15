@@ -9,7 +9,7 @@
 - **修复JWT未鉴权TypeError**：`Token::getData()` 对payload为JSON标量（如`123`）的token，在**签名校验之前**返回非数组并触发`TypeError`，可被未鉴权请求利用造成持续500。现统一抛出`JWT_TOKEN_PAYLOAD_ERROR`；同时补充header的`typ`校验与`alg`缺失防护，防跨协议拼接；
 - **修复JWT签发TypeError**：扩展数据包含非法UTF-8字符时`json_encode`返回false直接触发`TypeError`，现抛出`JWT_ENCODE_ERROR`；
 - **修复签名时间窗单边校验**：原实现仅校验`time() > timestamp + expire`，**未来时间戳的签名永久有效**。现改为双向窗口`abs(time() - timestamp) > expire`；
-- **禁止内置默认盐用于生产**：`AccessTokenAuth`/`SignatureAuth`检测到使用库内置公开盐（如`a!khg#-$%iu_ow1.08`、`df2!)*&+sdfg_687#@`）初始化时直接抛出异常，避免所有项目共享同一公开密钥导致Token/签名可被伪造；
+- **禁止内置默认盐用于生产**：`AccessTokenAuth`/`SignatureAuth`检测到使用库内置公开盐（如`a!khg#-$%iu_ow1.08`、`df2!)*&+sdfg_687#@`）或发布占位符`'%s'`（跳过`vendor:publish`直接上线的兜底值）初始化时直接抛出异常，避免公开字面量密钥导致Token/签名可被伪造；accesstoken配置模板内置的有效测试凭据（`TEST123456789`）同步移除，示例改为注释；
 - **修复RBAC权限校验fail-open**：`Auth::check()`传入空规则数组且`relation=false`时，`array_diff([], [])`为空导致直接放行。现先规范化规则，空规则列表按无权限处理（fail-closed）；
 - **超管标志与规则匹配改为严格比较**：消除PHP松散比较下`'*'`与数字规则ID的误判隐患。
 
@@ -17,11 +17,17 @@
 
 - **修复校验器错误信息丢失**：`validate()`每次返回新实例，`Role/Rule/Access`中`$this->validate()->getError()`永远取到空，参数校验失败时上层拿不到任何原因。现复用同一实例；
 - **修复RBAC pid环路拖死worker**：`UpdateChildrenService::getTree()`构建树前新增`TreeGuard::hasCycle()`检测。`pids`校验只能防止*新增*环路，历史脏数据一旦成环，`mon\util\Tree`的`getChildren()/getParents()`仍会无限递归，常驻进程worker直接内存耗尽崩溃或单核100%永久挂死（CLI下无执行时限兜底）；
-- **修复RBAC修改接口并发竞态（TOCTOU）**：`Role::modify()`/`Rule::modify()`的校验数据在事务加锁前读取，并发修改下可能基于过期快照写入越权数据。现事务内加锁重读并复核，数据已变更则拒绝（提示重试）；
+- **修复RBAC修改接口并发竞态（TOCTOU）**：`Role::modify()`/`Rule::modify()`的校验数据在事务加锁前读取，并发修改下可能基于过期快照写入越权数据。现事务内加锁重读并复核，数据已变更则拒绝（提示重试）；`Role::modify()`的子树快照读取同步移入事务内；`UpdateChildrenService::updatePids()`读取父节点增加行锁，防止并发移动同一父级导致pids链错乱；
+- **批量更新SQL值域白名单校验**：`UpdateChildrenService::batchUpdateSql()`废弃`addslashes`脆弱转义，字符串值仅允许数字与逗号组合（pids/rules实际值域），非法值直接拒绝（fail-closed）；
 - **JWT时间校验完善**：`exp`等于当前时间即视为过期（原`<`边界多放行1秒）；新增`iat`签发时间校验（拒绝容差外的未来签发时间）；新增`leeway`时钟容差配置（默认0）；
 - **Signature验签改用`hash_equals`恒时比较**，防止时序攻击；
 - **Signature新增`alg`配置**：支持`hmac-sha256`（推荐），默认保持`md5`向后兼容；`alg`为`hmac-sha256`时自动兼容校验旧版md5签名（`accept_legacy`，默认开启），客户端全部升级后可关闭；
-- `vendor:publish`不再覆盖已存在的密钥配置文件（避免重新生成密钥导致存量Token全部失效、滚动reload期间新旧worker密钥不一致出现随机401），已存在时跳过并提示；
+- `vendor:publish`不再覆盖已存在的密钥配置文件（避免重新生成密钥导致存量Token全部失效、滚动reload期间新旧worker密钥不一致出现随机401），已存在时跳过并提示；新配置写入改为临时文件+`rename`原子替换，避免并发publish产生半写内容或密钥交错覆盖；
+- **中间件健壮性**：`RbacMiddleware`登录判断改为`isset`/严格比较（uid=0不再误判未登录，消除读取未定义动态属性的PHP 8.2+ deprecation）；`AccessTokenMiddleware`参数校验改为严格比较（`"0"`值不再被`empty`误判）；`JwtMiddleware`对payload缺少`aud`的Token fail-closed拒绝；`SignatureMiddleware`清理不可达分支并明确签名数据取自POST表单的约定；
+- **错误码语义修正**：新增`ApiException::SIGN_NONCE_STORE_ERROR = 40240`，Redis等nonce存储故障不再误报为签名重放（`SIGN_REPLAY`）；
+- `AccessTokenAuth::createToken()/getTokenData()`补充初始化检查，未初始化时抛出干净异常而非fatal error；
+- `rbac\Auth::getAuthList()`复用同一请求内的规则ID查询结果，每次权限校验少一次访问表查询（常驻进程下DB压力减半）；
+- 数据库命令：`DbRbacCommand`补齐`Db::setConfig`初始化（与其他db*命令一致）；三个命令的表名统一做反引号转义；`execute()`统一返回int退出码；
 - `Install::getKey()`增加`string`返回类型声明。
 
 ### 其他
