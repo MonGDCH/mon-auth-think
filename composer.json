@@ -31,7 +31,9 @@
         "psr-4": {
             "mon\\auth\\": "src"
         },
-        "files": []
+        "files": [
+            "src/compat.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

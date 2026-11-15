@@ -2,7 +2,7 @@
 
 ## v1.3.1（2026-11-15）
 
-安全与稳定性修复，**无破坏性变更（`APIException` 改名保留兼容子类）**，建议所有常驻进程（Workerman/Webman/Swoole）用户升级。
+安全与稳定性修复，**无破坏性变更（`APIException` 改名保留向后兼容）**，建议所有常驻进程（Workerman/Webman/Swoole）用户升级。
 
 ### 安全修复
 
@@ -26,7 +26,7 @@
 
 ### 其他
 
-- 异常类统一命名：`APIException` → `ApiException`（文件名同步），原类名保留为兼容子类，旧代码`catch (APIException $e)`不受影响；
+- 异常类统一命名：`APIException` → `ApiException`（文件名同步）。PHP类名不区分大小写，运行时旧类名引用（如`catch (APIException $e)`）无需改动即可解析；针对大小写敏感文件系统（Linux）下旧类名自动加载查找失败的场景，新增`src/compat.php`注册前置自动加载器（经composer `files`自动加载），旧代码零改动兼容；
 - `composer.json`声明`version 1.3.1`。
 
 ## v1.1.0（2026-11-07）
