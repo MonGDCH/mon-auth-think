@@ -129,28 +129,28 @@ class Auth
      */
     public function check($rule, $uid, bool $relation = true): bool
     {
+        // 先规范化待验证规则：避免参数非法时也去查库，同时修复空规则列表直接放行(fail-open)的问题
+        $rule = $this->normalizeRule($rule);
+        if (empty($rule)) {
+            // 规则列表为空属于调用方错误，按无权限处理（fail-closed）
+            $this->triggerEvent($uid, $rule, 'failed', [], $relation);
+            return false;
+        }
+
         // 获取用户需要验证的所有有效规则列表
         $authList = $this->getAuthList($uid);
-        if (in_array($this->config['admin_mark'], (array) $authList)) {
+        if (in_array($this->config['admin_mark'], (array) $authList, true)) {
             // 触发rbac权限验证事件
             $this->triggerEvent($uid, $rule, 'admin', $authList, $relation);
             // 具备所有权限
             return true;
         }
 
-        // 获取需求验证的规则
-        if (is_string($rule)) {
-            $rule = [strtolower($rule)];
-        } else if (is_array($rule)) {
-            $rule = array_map('strtolower', $rule);
-        } else {
-            throw new RbacException('不支持的规则类型，只支持string、array类型', RbacException::RBAC_RULE_NOT_SUPPORT);
-        }
         // 保存验证通过的规则名
         $list = [];
         // 验证权限
         foreach ($authList as $auth) {
-            if (in_array($auth, $rule)) {
+            if (in_array($auth, $rule, true)) {
                 $list[] = $auth;
             }
         }
@@ -170,6 +170,36 @@ class Auth
         // 触发rbac权限验证不通过事件
         $this->triggerEvent($uid, $rule, 'failed', $diff, $relation);
         return false;
+    }
+
+    /**
+     * 规范化待验证的规则
+     *
+     * @param  string|array $rule 待验证的规则
+     * @throws RbacException
+     * @return array
+     */
+    protected function normalizeRule($rule): array
+    {
+        if (is_string($rule) || is_int($rule)) {
+            $rule = [(string) $rule];
+        } else if (!is_array($rule)) {
+            throw new RbacException('不支持的规则类型，只支持string、array类型', RbacException::RBAC_RULE_NOT_SUPPORT);
+        }
+
+        $result = [];
+        foreach ($rule as $item) {
+            if (!is_string($item) && !is_int($item)) {
+                throw new RbacException('规则列表只支持string、int类型', RbacException::RBAC_RULE_NOT_SUPPORT);
+            }
+            $item = strtolower(trim((string) $item));
+            if ($item === '') {
+                continue;
+            }
+            $result[$item] = $item;
+        }
+
+        return array_values($result);
     }
 
     /**
@@ -209,7 +239,7 @@ class Auth
         }
         $authList = [];
         // 判断是否拥有所有权限
-        if (in_array($this->config['admin_mark'], $ids)) {
+        if (in_array($this->config['admin_mark'], $ids, true)) {
             $authList[] = $this->config['admin_mark'];
             return $authList;
         }
@@ -241,7 +271,14 @@ class Auth
         // 构造查询条件
         $dao = $this->getRuleDao();
         $query = $dao->field(['id', 'pid', 'rule', 'title'])->where('status', $this->config['effective_status']);
-        if (!in_array($this->config['admin_mark'], $ids)) {
+        if (!in_array($this->config['admin_mark'], $ids, true)) {
+            // 规则ID统一转为整型，避免脏数据（如非数字）导致 MySQL 隐式转换告警或匹配到 id=0
+            $ids = array_values(array_filter(array_map('intval', $ids), function ($id) {
+                return $id > 0;
+            }));
+            if (empty($ids)) {
+                return [];
+            }
             $query->where('id', 'IN', $ids);
         }
         // 获取权限规则

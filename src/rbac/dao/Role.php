@@ -64,9 +64,10 @@ class Role extends Dao
      */
     public function add(array $option, array $ext = []): int
     {
-        $check = $this->validate()->scope('role_add')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('role_add')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('新增角色参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('新增角色参数错误：' . $validate->getError());
         }
         $pid = $option['pid'];
         $pids = '0';
@@ -122,9 +123,10 @@ class Role extends Dao
      */
     public function modify(array $option, array $ext = []): bool
     {
-        $check = $this->validate()->scope('role_modify')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('role_modify')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('修改角色信息参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('修改角色信息参数错误：' . $validate->getError());
         }
         // 获取数据
         $info = $this->where(['id' => $option['id']])->get();
@@ -215,6 +217,16 @@ class Role extends Dao
         // 更新数据
         $this->startTrans();
         try {
+            // 并发防护：事务内加锁重读并复核，前面校验阶段读取的数据可能已被并发修改
+            $lockedInfo = $this->where(['id' => $idx])->lock(true)->get();
+            if (!$lockedInfo
+                || $lockedInfo['pid'] != $info['pid']
+                || $lockedInfo['status'] != $info['status']
+                || $lockedInfo['rules'] != $info['rules']
+            ) {
+                throw new RbacDaoException('修改角色信息失败： 角色数据已发生变更，请刷新后重试');
+            }
+
             // 修改角色信息
             $modifyInfo = array_merge($ext, [
                 'title'     => $option['title'],

@@ -76,9 +76,10 @@ class Access extends Dao
      */
     public function bind(array $option, array $ext = []): bool
     {
-        $check = $this->validate()->scope('access_bind')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('access_bind')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('关联角色用户参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('关联角色用户参数错误：' . $validate->getError());
         }
 
         if ($this->where('gid', $option['gid'])->where('uid', $option['uid'])->get()) {
@@ -104,9 +105,10 @@ class Access extends Dao
      */
     public function unbind(array $option): bool
     {
-        $check = $this->validate()->scope('access_unbind')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('access_unbind')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('解除角色用户关联参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('解除角色用户关联参数错误：' . $validate->getError());
         }
 
         $info = $this->where('gid', $option['gid'])->where('uid', $option['uid'])->get();
@@ -132,9 +134,10 @@ class Access extends Dao
      */
     public function modify(array $option, array $ext = []): bool
     {
-        $check = $this->validate()->scope('access_modify')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('access_modify')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('修改角色用户关联参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('修改角色用户关联参数错误：' . $validate->getError());
         }
         if ($option['new_gid'] == $option['gid']) {
             throw new RbacDaoException('修改角色用户关联参数错误： 新角色与旧角色相同');

@@ -7,6 +7,7 @@ namespace mon\auth\rbac;
 use Throwable;
 use mon\util\Tree;
 use mon\thinkORM\Db;
+use mon\auth\exception\RbacDaoException;
 use mon\auth\exception\RbacException;
 
 /**
@@ -170,6 +171,11 @@ class UpdateChildrenService
     {
         if ($this->tree === null) {
             $data = Db::table($this->table)->select()->toArray();
+            // 脏数据兜底：pids与pid不一致或历史数据存在环路时，Tree的getChildren/getParents
+            // 会无限递归导致worker内存耗尽或CPU 100%挂死，构建前必须检测
+            if (TreeGuard::hasCycle($data, $this->id, $this->pid)) {
+                throw new RbacDaoException('权限数据父子关系存在环路，请先修复数据');
+            }
             $sdk = new Tree(['id' => $this->id, 'pid' => $this->pid]);
             $this->tree = $sdk->data($data);
         }

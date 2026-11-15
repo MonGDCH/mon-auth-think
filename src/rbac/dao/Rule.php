@@ -63,9 +63,10 @@ class Rule extends Dao
      */
     public function add(array $option, array $ext = []): int
     {
-        $check = $this->validate()->scope('rule_add')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('rule_add')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('新增权限规则参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('新增权限规则参数错误：' . $validate->getError());
         }
 
         $status = $option['status'];
@@ -111,9 +112,10 @@ class Rule extends Dao
      */
     public function modify(array $option, array $ext = []): bool
     {
-        $check = $this->validate()->scope('rule_modify')->data($option)->check();
+        $validate = $this->validate();
+        $check = $validate->scope('rule_modify')->data($option)->check();
         if (!$check) {
-            throw new RbacDaoException('修改权限规则参数错误：' . $this->validate()->getError());
+            throw new RbacDaoException('修改权限规则参数错误：' . $validate->getError());
         }
 
         $idx = $option['id'];
@@ -154,6 +156,15 @@ class Rule extends Dao
         // 更新数据
         $this->startTrans();
         try {
+            // 并发防护：事务内加锁重读并复核，前面校验阶段读取的数据可能已被并发修改
+            $lockedInfo = $this->where(['id' => $idx])->lock(true)->get();
+            if (!$lockedInfo
+                || $lockedInfo['pid'] != $ruleInfo['pid']
+                || $lockedInfo['status'] != $ruleInfo['status']
+            ) {
+                throw new RbacDaoException('修改权限规则失败： 规则数据已发生变更，请刷新后重试');
+            }
+
             // 修改规则信息
             $modifyInfo = array_merge($ext, [
                 'pid'       => $pid,
