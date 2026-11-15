@@ -36,11 +36,11 @@ class AccessToken implements Driver
     const FORMAT_LEGACY = 'nbed64';
 
     /**
-     * 内置的加密盐
+     * 加密盐，必须显式传入，未配置时构造将抛出异常
      *
      * @var string
      */
-    protected $encrypt_salt = 'a!a05kh(g#-$%iu_ow1.08';
+    protected $encrypt_salt = '';
 
     /**
      * Token格式，默认签发AES-256-GCM格式
@@ -77,8 +77,12 @@ class AccessToken implements Driver
      * @param array  $field_map 字段名映射
      * @param array  $options   额外选项：format（token格式，默认gcm）、legacy_parse（兼容解析旧格式，默认true）
      */
-    public function __construct(string $salt = 'a!a05kh(g#-$%iu_ow1.08', array $field_map = [], array $options = [])
+    public function __construct(string $salt = '', array $field_map = [], array $options = [])
     {
+        // 盐为空时直接拒绝初始化，防止无盐Token上线
+        if ($salt === '') {
+            throw new ApiException('未配置有效的AccessToken加密盐', ApiException::AUTH_INIT_ERROR);
+        }
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
         if (isset($options['format'])) {
@@ -155,6 +159,9 @@ class AccessToken implements Driver
      */
     public function setSalt(string $salt): AccessToken
     {
+        if ($salt === '') {
+            throw new ApiException('未配置有效的AccessToken加密盐', ApiException::AUTH_INIT_ERROR);
+        }
         $this->encrypt_salt = $salt;
         return $this;
     }

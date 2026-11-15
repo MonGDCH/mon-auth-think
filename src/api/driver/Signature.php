@@ -20,11 +20,11 @@ class Signature implements Driver
     use Instance;
 
     /**
-     * 内置的加密盐
+     * 加密盐，必须显式传入，未配置时构造将抛出异常
      *
      * @var string
      */
-    protected $encrypt_salt = 'df2!)*&+sdfg_dfg687#@';
+    protected $encrypt_salt = '';
 
     /**
      * 签名算法：md5（历史默认，保持向后兼容）| hmac-sha256（推荐）
@@ -65,8 +65,12 @@ class Signature implements Driver
      * @param array $field_map  字段名映射
      * @param array $options    扩展配置：alg(md5|hmac-sha256，默认md5保持向后兼容)、accept_legacy(是否兼容校验旧版md5签名)
      */
-    public function __construct(string $salt = 'df2!)*&+sdfg_dfg687#@', array $field_map = [], array $options = [])
+    public function __construct(string $salt = '', array $field_map = [], array $options = [])
     {
+        // 盐为空时直接拒绝初始化，防止无盐签名上线
+        if ($salt === '') {
+            throw new ApiException('未配置有效的Signature加密盐', ApiException::AUTH_INIT_ERROR);
+        }
         $this->encrypt_salt = $salt;
         $this->field_map = array_merge($this->field_map, $field_map);
         if (isset($options['alg'])) {

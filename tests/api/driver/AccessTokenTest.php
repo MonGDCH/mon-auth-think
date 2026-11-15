@@ -114,4 +114,12 @@ class AccessTokenTest extends TestCase
         $this->expectExceptionCode(ApiException::ACCESS_TOKEN_INVALID);
         $driver->getData($token, 'APP001', 'secret456', '127.0.0.1');
     }
+
+    public function testEmptySaltRejected(): void
+    {
+        // 盐必须显式配置，空盐直接拒绝初始化（fail-closed）
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::AUTH_INIT_ERROR);
+        new AccessToken('');
+    }
 }

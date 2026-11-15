@@ -30,8 +30,8 @@ class SignatureAuth extends ApiAuth
      * @var array
      */
     protected $config = [
-        // 默认加密盐
-        'salt'  => 'df2!)*&+sdfg_687#@',
+        // 加密盐，必须显式配置，未配置时初始化将抛出异常
+        'salt'  => '',
         // 签名算法：md5（历史默认，保持向后兼容）| hmac-sha256（推荐，新接入方建议使用）
         'alg'   => 'md5',
         // alg为hmac-sha256时，是否兼容校验旧版md5签名，客户端全部升级后建议关闭

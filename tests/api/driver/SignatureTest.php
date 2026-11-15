@@ -107,4 +107,12 @@ class SignatureTest extends TestCase
         $this->assertArrayHasKey('sign', $data);
         $this->assertTrue($driver->check($this->secret, $data));
     }
+
+    public function testEmptySaltRejected(): void
+    {
+        // 盐必须显式配置，空盐直接拒绝初始化（fail-closed）
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(ApiException::AUTH_INIT_ERROR);
+        new Signature('');
+    }
 }

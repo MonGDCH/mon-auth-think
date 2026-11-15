@@ -40,8 +40,8 @@ class AccessTokenAuth extends ApiAuth
         ],
         // 有效时间，单位秒
         'expire'    => 7200,
-        // 默认加密盐
-        'salt'      => 'a!khg#-$%iu_ow1.08',
+        // 加密盐，必须显式配置，未配置时初始化将抛出异常
+        'salt'      => '',
         // Token签发格式：gcm=AES-256-GCM认证加密（推荐），nbed64=旧版自研加密
         'token_format'  => 'gcm',
         // 兼容解析旧版格式token（迁移期双读，确认存量token全部过期后可关闭）
